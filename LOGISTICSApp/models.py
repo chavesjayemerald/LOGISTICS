@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.conf import settings 
 
 # USER MANAGEMENT
 class UserManager(BaseUserManager):
@@ -71,3 +72,70 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.lastname}, {self.firstname}"
+    
+
+# STORAGE MANAGEMENT
+class Repository(models.Model):
+    repository_id = models.AutoField(primary_key=True)
+    repository_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_repositories'
+
+    def __str__(self):
+        return self.repository_name
+
+class Classification(models.Model):
+    class_id = models.AutoField(primary_key=True)
+    class_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_classifications'
+
+    def __str__(self):
+        return self.class_name
+
+class Subclassification(models.Model):
+    subclass_id = models.AutoField(primary_key=True)
+    class_id = models.ForeignKey(Classification, on_delete=models.CASCADE, db_column='class_id')
+    subclass_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_subclassifications'
+
+    def __str__(self):
+        return self.subclass_name
+
+class Subset(models.Model):
+    subset_id = models.AutoField(primary_key=True)
+    subclass_id = models.ForeignKey(Subclassification, on_delete=models.CASCADE, db_column='subclass_id')
+    subset_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_subsets'
+
+    def __str__(self):
+        return self.subset_name
+
+class Stored(models.Model):
+    SERIAL_CHOICES = [('ICS', 'ICS'), ('PAR', 'PAR')]
+    store_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    repository_id = models.ForeignKey(Repository, on_delete=models.CASCADE, db_column='repository_id')
+    class_id = models.ForeignKey(Classification, on_delete=models.CASCADE, db_column='class_id')
+    subclass_id = models.ForeignKey(Subclassification, on_delete=models.CASCADE, db_column='subclass_id')
+    subset_id = models.ForeignKey(Subset, on_delete=models.CASCADE, db_column='subset_id', blank=True, null=True)
+    store_memo = models.CharField(max_length=255, blank=True, null=True)
+    date_received = models.DateField()
+    date_acquired = models.DateField()
+    end_user = models.CharField(max_length=255)
+    unit_quantity = models.BigIntegerField()
+    amount = models.BigIntegerField()
+    serial_type = models.CharField(max_length=3, choices=SERIAL_CHOICES)
+    serial_number = models.BigIntegerField()
+
+    class Meta:
+        db_table = 'tbl_stored'
+
+    def __str__(self):
+        return f"{self.repository.repository_name} - {self.serial_type} #{self.serial_number}"

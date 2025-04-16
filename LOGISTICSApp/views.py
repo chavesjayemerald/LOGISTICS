@@ -82,3 +82,38 @@ def user_signup(request):
 def dashboard(request):
     
     return render(request, "dashboard.html")
+
+
+# STORAGE MANAGEMENT
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Stored
+from .forms import StoredForm
+
+def storage_management(request):
+    stored_list = Stored.objects.all()
+    form = StoredForm()
+
+    if request.method == 'POST':
+        if 'store_id' in request.POST:
+            instance = get_object_or_404(Stored, pk=request.POST['store_id'])
+            form = StoredForm(request.POST, instance=instance)
+        else:
+            form = StoredForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect('storage_management')
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(Stored, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('storage_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(Stored, pk=request.GET.get('edit'))
+        form = StoredForm(instance=instance)
+
+    return render(request, 'storage/storage_management.html', {
+        'form': form,
+        'stored_list': stored_list
+    })

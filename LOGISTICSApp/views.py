@@ -86,17 +86,22 @@ def dashboard(request):
 
 # STORAGE MANAGEMENT
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Stored, Repository, Classification
+from .models import Stored, Repository, Classification, Subclassification, Subset
 from .forms import StoredForm
 
+@login_required
 def storage_management(request):
     stored_list = Stored.objects.all()
     form = StoredForm()
 
     if request.method == 'POST':
-        form = StoredForm(request.POST)
+        instance = None
+        if 'store_id' in request.POST:
+            instance = get_object_or_404(Stored, pk=request.POST['store_id'])
+        
+        form = StoredForm(request.POST, instance=instance)
+
         if form.is_valid():
-            # Repository
             repository = form.cleaned_data.get('repository_id')
             if not repository:
                 new_repo_name = form.cleaned_data.get('new_repository_name')
@@ -105,7 +110,6 @@ def storage_management(request):
                 else:
                     repository = None
 
-            # Classification
             classification = form.cleaned_data.get('class_id')
             if not classification:
                 new_class_name = form.cleaned_data.get('new_classification_name')
@@ -114,7 +118,6 @@ def storage_management(request):
                 else:
                     classification = None
 
-            # Subclassification
             subclassification = form.cleaned_data.get('subclass_id')
             if not subclassification:
                 new_subclass_name = form.cleaned_data.get('new_subclassification_name')
@@ -126,7 +129,6 @@ def storage_management(request):
                 else:
                     subclassification = None
 
-            # Subset
             subset = form.cleaned_data.get('subset_id')
             if not subset:
                 new_subset_name = form.cleaned_data.get('new_subset_name')
@@ -138,7 +140,6 @@ def storage_management(request):
                 else:
                     subset = None
 
-            # Save Stored
             stored = form.save(commit=False)
             stored.repository_id = repository
             stored.class_id = classification
@@ -178,3 +179,81 @@ def load_subsets(request):
     subclass_id = request.GET.get('subclass_id')
     subsets = Subset.objects.filter(subclass_id=subclass_id).values('subset_id', 'subset_name')
     return JsonResponse(list(subsets), safe=False)
+
+
+
+# RIS MANAGEMENT
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import RIS, RISClassification, RISSubclassification
+from .forms import RISForm
+
+@login_required
+def ris_management(request):
+    ris_list = RIS.objects.all()
+    form = RISForm()
+
+    if request.method == 'POST':
+        ris_id = request.POST.get('ris_id')
+        instance = None
+
+        if ris_id:
+            instance = get_object_or_404(RIS, pk=ris_id)
+
+        form = RISForm(request.POST, instance=instance)
+        
+        if form.is_valid():
+            repository = form.cleaned_data.get('repository_id')
+            if not repository:
+                new_repo_name = form.cleaned_data.get('new_repository_name')
+                if new_repo_name:
+                    repository, _ = Repository.objects.get_or_create(repository_name=new_repo_name)
+
+            risclassification = form.cleaned_data.get('risclass_id')
+            if not risclassification:
+                new_risclass_name = form.cleaned_data.get('new_risclassification_name')
+                if new_risclass_name:
+                    risclassification, _ = RISClassification.objects.get_or_create(risclass_name=new_risclass_name)
+
+            rissubclassification = form.cleaned_data.get('rissubclass_id')
+            if not rissubclassification:
+                new_rissubclass_name = form.cleaned_data.get('new_rissubclassification_name')
+                if new_rissubclass_name and risclassification:
+                    rissubclassification, _ = RISSubclassification.objects.get_or_create(
+                        rissubclass_name=new_rissubclass_name,
+                        risclass_id=risclassification
+                    )
+
+            ris = form.save(commit=False)
+            ris.repository_id = repository
+            ris.risclass_id = risclassification
+            ris.rissubclass_id = rissubclassification
+            ris.ris_memo = request.POST.get('ris_memo')
+            ris.save()
+            return redirect('ris_management')
+
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(RIS, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('ris_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(RIS, pk=request.GET.get('edit'))
+        form = RISForm(instance=instance)
+
+    attrs = {'class': 'form-control'}
+    return render(request, 'ris/ris_management.html', {
+        'form': form,
+        'ris_list': ris_list,
+        'attrs': attrs
+    })
+
+
+from django.http import JsonResponse
+from .models import RISSubclassification
+
+def load_rissubclassifications(request):
+    risclass_id = request.GET.get('risclass_id')
+    rissubclasses = RISSubclassification.objects.filter(risclass_id=risclass_id).values('rissubclass_id', 'rissubclass_name')
+    return JsonResponse(list(rissubclasses), safe=False)
+

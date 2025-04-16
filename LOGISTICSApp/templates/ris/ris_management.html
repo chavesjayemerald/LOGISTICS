@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}RIS - BFP LOGISTICS{% endblock %}
+
+{% block content %}
+<h2>RIS Management</h2>
+
+<div style="margin-top: 50px;">
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#risModal">
+        Add New Item
+    </button>
+</div>
+
+<div class="modal fade" id="risModal" tabindex="-1" role="dialog" aria-labelledby="risModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="risModalLabel">{% if form.instance.pk %}Update Item{% else %}Add New Item{% endif %}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <!-- User -->
+                <div class="form-group mb-3">
+                    <label for="id_user_id">User:</label>
+                    {{ form.user }}
+                </div>
+            
+                <!-- Repository -->
+                <div class="form-group mb-3">
+                    <label for="id_repository_id">Repository:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.repository_id }}
+                    {{ form.new_repository_name }}
+                    </div>
+                </div>
+            
+                <!-- Classification -->
+                <div class="form-group mb-3">
+                    <label for="id_risclass_id">Classification:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.risclass_id }}
+                    {{ form.new_risclassification_name }}
+                    </div>
+                </div>
+                
+                <!-- Subclassification -->
+                <div class="form-group mb-3">
+                    <label for="id_rissubclass_id">Sub Classification:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.rissubclass_id }}
+                    {{ form.new_rissubclassification_name }}
+                    </div>
+                </div>
+
+                <!-- Unit Quantity -->
+                <div class="form-group mb-3">
+                    <label for="id_unit_quantity">Unit Quantity:</label>
+                    {{ form.unit_quantity }}
+                </div>
+
+                <!-- Amount -->
+                <div class="form-group mb-3">
+                    <label for="id_amount">Amount:</label>
+                    {{ form.amount }}
+                </div>
+
+                <!-- Date Received -->
+                <div class="form-group mb-3">
+                    <label for="id_date_received">Date Received:</label>
+                    {{ form.date_received }}
+                </div>
+
+                <!-- Date Acquired -->
+                <div class="form-group mb-3">
+                    <label for="id_date_acquired">Date Acquired:</label>
+                    {{ form.date_acquired }}
+                </div>
+
+                <!-- End User -->
+                <div class="form-group mb-3">
+                    <label for="id_end_user">End User:</label>
+                    {{ form.end_user }}
+                </div>
+
+                <!-- Memo -->
+                <div class="form-group mb-3">
+                    <label for="id_ris_memo">Memo:</label>
+                    <textarea id="id_ris_memo" name="ris_memo" class="form-control" rows="4" style="resize: both;"></textarea>
+                </div>
+                            
+
+                {% if form.instance.pk %}
+                    <input type="hidden" name="ris_id" value="{{ form.instance.pk }}">
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">
+                {% if form.instance.pk %}Update{% else %}Add{% endif %}
+                </button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<table id="ris-table" class="table table-bordered table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>Repository</th>
+            <th>Classification</th>
+            <th>Sub Classification</th>
+            <th>Memo</th>
+            <th>End User</th>
+            <th>Date Received</th>
+            <th>Date Acquired</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for ris in ris_list %}
+        <tr>
+            <td>{{ ris.repository_id }}</td>
+            <td>{{ ris.risclass_id }}</td>
+            <td>{{ ris.rissubclass_id }}</td>
+            <td>{{ ris.ris_memo }}</td>
+            <td>{{ ris.end_user }}</td>
+            <td>{{ ris.date_received }}</td>
+            <td>{{ ris.date_acquired }}</td>
+            <td>
+                <a href="?edit={{ ris.pk }}" class="btn btn-sm btn-info">Edit</a>
+                <a href="?delete={{ ris.pk }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">Delete</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        function toggleNewFields() {
+            if ($('#id_repository_id option:selected').text() === 'Others') {
+                $('#new_repository_name_field').show();
+            } else {
+                $('#new_repository_name_field').hide();
+            }
+
+            if ($('#id_risclass_id option:selected').text() === 'Others') {
+                $('#new_risclassification_name_field').show();
+            } else {
+                $('#new_risclassification_name_field').hide();
+            }
+
+            if ($('#id_rissubclass_id option:selected').text() === 'Others') {
+                $('#new_rissubclassification_name_field').show();
+            } else {
+                $('#new_rissubclassification_name_field').hide();
+            }
+        }
+
+        $('#id_repository_id, #id_risclass_id, #id_rissubclass_id').change(function () {
+            toggleNewFields();
+        });
+
+        toggleNewFields();
+    });
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#ris-table').DataTable();
+    
+        if (window.location.search.indexOf('edit') > -1) {
+            $('#risModal').modal('show');
+        }
+
+        $('#id_risclass_id').on('change', function () {
+            var risclassId = $(this).val();
+            if (risclassId) {
+                $.ajax({
+                    url: '/ajax/load-rissubclassifications/',
+                    data: {
+                        'risclass_id': risclassId
+                    },
+                    success: function (data) {
+                        $('#id_rissubclass_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_rissubclass_id').append(
+                                $('<option></option>').val(item.rissubclass_id).html(item.rissubclass_name)
+                            );
+                        });
+                    }
+                });
+            } else {
+                $('#id_rissubclass_id').html('<option value="">---------</option>');
+            }
+        });
+
+        function removeQueryParam(param) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(param);
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        $('#risModal').on('hidden.bs.modal', function () {
+            removeQueryParam('edit');
+        });
+
+        $('.btn-secondary').on('click', function () {
+            $('#risModal').modal('hide');
+        });
+
+        $('.close').on('click', function () {
+            $('#risModal').modal('hide');
+        });
+
+    });
+</script>
+
+    
+{% endblock %}

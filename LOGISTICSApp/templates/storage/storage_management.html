@@ -110,8 +110,9 @@
                 <!-- Memo -->
                 <div class="form-group mb-3">
                     <label for="id_store_memo">Memo:</label>
-                    {{ form.store_memo }}
+                    <textarea id="id_store_memo" name="store_memo" class="form-control" rows="4" style="resize: both;"></textarea>
                 </div>
+                
 
                 {% if form.instance.pk %}
                     <input type="hidden" name="store_id" value="{{ form.instance.pk }}">
@@ -203,15 +204,64 @@
 
         toggleNewFields();
     });
+
+    const initialSubclassId = "{{ form.subclass_id.value|default:'' }}";
+    const initialSubsetId = "{{ form.subset_id.value|default:'' }}";
 </script>
 
 <script>
     $(document).ready(function () {
         $('#storage-table').DataTable();
-    
+
+
         if (window.location.search.indexOf('edit') > -1) {
             $('#storageModal').modal('show');
+
+            // Trigger subclass load based on selected classification
+            const classId = $('#id_class_id').val();
+            if (classId) {
+                $.ajax({
+                    url: '/ajax/load-subclassifications/',
+                    data: { 'class_id': classId },
+                    success: function (data) {
+                        $('#id_subclass_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subclass_id').append(
+                                $('<option></option>').val(item.subclass_id).html(item.subclass_name)
+                            );
+                        });
+
+                        // Pre-select subclass
+                        if (initialSubclassId) {
+                            $('#id_subclass_id').val(initialSubclassId).trigger('change');
+                        }
+                    }
+                });
+            }
+
+            // Then trigger subset load based on selected subclass
+            const subclassId = "{{ form.subclass_id.value|default:'' }}";
+            if (subclassId) {
+                $.ajax({
+                    url: '/ajax/load-subsets/',
+                    data: { 'subclass_id': subclassId },
+                    success: function (data) {
+                        $('#id_subset_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subset_id').append(
+                                $('<option></option>').val(item.subset_id).html(item.subset_name)
+                            );
+                        });
+
+                        // Pre-select subset
+                        if (initialSubsetId) {
+                            $('#id_subset_id').val(initialSubsetId);
+                        }
+                    }
+                });
+            }
         }
+
 
         $('#id_class_id').on('change', function () {
             var classId = $(this).val();
@@ -259,17 +309,24 @@
             }
         });
 
-        $('#storageModal').on('hidden.bs.modal', function () {
-            window.history.back();
+        function removeQueryParam(param) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(param);
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        $('#risModal').on('hidden.bs.modal', function () {
+            removeQueryParam('edit');
         });
 
         $('.btn-secondary').on('click', function () {
-            window.history.back();
+            $('#risModal').modal('hide');
         });
 
         $('.close').on('click', function () {
-            window.history.back();
+            $('#risModal').modal('hide');
         });
+
     });
 </script>
     

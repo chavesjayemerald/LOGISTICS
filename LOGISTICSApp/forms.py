@@ -1,5 +1,5 @@
 from django import forms
-from .models import Stored, Subclassification, Subset, Repository, Classification
+from .models import Stored, Subclassification, Subset
 
 class StoredForm(forms.ModelForm):
     new_repository_name = forms.CharField(required=False, label='New Repository Name')
@@ -41,6 +41,43 @@ class StoredForm(forms.ModelForm):
         self.fields['subset_id'].required = False
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
+
+
+
+from django import forms
+from .models import RIS, RISSubclassification
+
+class RISForm(forms.ModelForm):
+    new_repository_name = forms.CharField(required=False, label='New Repository Name')
+    new_risclassification_name = forms.CharField(required=False, label='New RIS Classification Name')
+    new_rissubclassification_name = forms.CharField(required=False, label='New RIS Subclassification Name')
+
+    class Meta:
+        model = RIS
+        fields = '__all__'
+        widgets = {
+            'date_received': forms.DateInput(attrs={'type': 'date'}),
+            'date_acquired': forms.DateInput(attrs={'type': 'date'}),
+        }
+        
+
+    def __init__(self, *args, **kwargs):
+        super(RISForm, self).__init__(*args, **kwargs)
+        self.fields['rissubclass_id'].queryset = RISSubclassification.objects.none()
+
+        if 'risclass_id' in self.data:
+            try:
+                risclass_id = int(self.data.get('risclass_id'))
+                self.fields['rissubclass_id'].queryset = RISSubclassification.objects.filter(risclass_id=risclass_id)
+            except (ValueError, TypeError):
+                pass
+
+        self.fields['repository_id'].required = False
+        self.fields['risclass_id'].required = False
+        self.fields['rissubclass_id'].required = False
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
 
 
 

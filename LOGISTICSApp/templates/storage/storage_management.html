@@ -5,12 +5,10 @@
 {% block content %}
 <h2>Storage Management</h2>
 
-<!-- Button to open modal -->
 <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#storageModal">
     Add New Item
 </button>
 
-<!-- Modal Form -->
 <div class="modal fade" id="storageModal" tabindex="-1" role="dialog" aria-labelledby="storageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
@@ -46,10 +44,12 @@
         <tr>
             <th>Repository</th>
             <th>Classification</th>
-            <th>Subclassification</th>
+            <th>Sub Classification</th>
             <th>Subset</th>
             <th>Memo</th>
             <th>End User</th>
+            <th>Date Received</th>
+            <th>Date Acquired</th>
             <th>Serial</th>
             <th>Actions</th>
         </tr>
@@ -63,6 +63,8 @@
             <td>{{ store.subset_id|default:"—" }}</td>
             <td>{{ store.store_memo }}</td>
             <td>{{ store.end_user }}</td>
+            <td>{{ store.date_received }}</td>
+            <td>{{ store.date_acquired }}</td>
             <td>{{ store.serial_type }} - {{ store.serial_number }}</td>
             <td>
                 <a href="?edit={{ store.pk }}" class="btn btn-sm btn-info">Edit</a>
@@ -76,22 +78,79 @@
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
     $(document).ready(function () {
         $('#storage-table').DataTable();
-
-        // Show the modal if the URL contains the 'edit' query parameter
+    
+        // Show modal if ?edit=id exists
         if (window.location.search.indexOf('edit') > -1) {
             $('#storageModal').modal('show');
         }
 
-        // Refresh the page without the ?edit=id parameter after the modal is closed
+        // When Class changes
+        $('#id_class_id').on('change', function () {
+            var classId = $(this).val();
+            if (classId) {
+                $.ajax({
+                    url: '/ajax/load-subclassifications/',
+                    data: {
+                        'class_id': classId
+                    },
+                    success: function (data) {
+                        $('#id_subclass_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subclass_id').append(
+                                $('<option></option>').val(item.subclass_id).html(item.subclass_name)
+                            );
+                        });
+                        $('#id_subset_id').html('<option value="">---------</option>'); // Reset subsets
+                    }
+                });
+            } else {
+                $('#id_subclass_id').html('<option value="">---------</option>');
+                $('#id_subset_id').html('<option value="">---------</option>');
+            }
+        });
+    
+        // When Subclass changes
+        $('#id_subclass_id').on('change', function () {
+            var subclassId = $(this).val();
+            if (subclassId) {
+                $.ajax({
+                    url: '/ajax/load-subsets/',
+                    data: {
+                        'subclass_id': subclassId
+                    },
+                    success: function (data) {
+                        $('#id_subset_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subset_id').append(
+                                $('<option></option>').val(item.subset_id).html(item.subset_name)
+                            );
+                        });
+                    }
+                });
+            } else {
+                $('#id_subset_id').html('<option value="">---------</option>');
+            }
+        });
+
+        // When Cancel or Close is clicked, go to the previous page (without the edit parameter)
         $('#storageModal').on('hidden.bs.modal', function () {
-            var currentUrl = window.location.href;
-            var newUrl = currentUrl.split('?')[0];  // Remove the query string
-            window.history.replaceState(null, null, newUrl);  // Update the URL without reloading
-            location.reload();  // Reload the page
+            window.history.back(); // Go back to the previous page
+        });
+
+        // When Cancel button is clicked
+        $('.btn-secondary').on('click', function () {
+            window.history.back(); // Go back to the previous page
+        });
+
+        // When Close button is clicked
+        $('.close').on('click', function () {
+            window.history.back(); // Go back to the previous page
         });
     });
 </script>
+    
 {% endblock %}

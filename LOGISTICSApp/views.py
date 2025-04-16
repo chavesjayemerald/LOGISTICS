@@ -117,3 +117,17 @@ def storage_management(request):
         'form': form,
         'stored_list': stored_list
     })
+
+
+from django.http import JsonResponse
+from .models import Subclassification, Subset
+
+def load_subclassifications(request):
+    class_id = request.GET.get('class_id')
+    subclasses = Subclassification.objects.filter(class_id=class_id).values('subclass_id', 'subclass_name')
+    return JsonResponse(list(subclasses), safe=False)
+
+def load_subsets(request):
+    subclass_id = request.GET.get('subclass_id')
+    subsets = Subset.objects.filter(subclass_id=subclass_id).values('subset_id', 'subset_name')
+    return JsonResponse(list(subsets), safe=False)

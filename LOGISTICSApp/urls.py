@@ -8,4 +8,7 @@ urlpatterns = [
     path("signup/", views.user_signup, name="signup"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path('storage/', views.storage_management, name='storage_management'),
+    path('ajax/load-subclassifications/', views.load_subclassifications, name='ajax_load_subclassifications'),
+    path('ajax/load-subsets/', views.load_subsets, name='ajax_load_subsets'),
+
 ]

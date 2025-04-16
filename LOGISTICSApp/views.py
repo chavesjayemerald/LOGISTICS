@@ -86,7 +86,7 @@ def dashboard(request):
 
 # STORAGE MANAGEMENT
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Stored
+from .models import Stored, Repository, Classification
 from .forms import StoredForm
 
 def storage_management(request):
@@ -94,14 +94,57 @@ def storage_management(request):
     form = StoredForm()
 
     if request.method == 'POST':
-        if 'store_id' in request.POST:
-            instance = get_object_or_404(Stored, pk=request.POST['store_id'])
-            form = StoredForm(request.POST, instance=instance)
-        else:
-            form = StoredForm(request.POST)
-
+        form = StoredForm(request.POST)
         if form.is_valid():
-            form.save()
+            # Repository
+            repository = form.cleaned_data.get('repository_id')
+            if not repository:
+                new_repo_name = form.cleaned_data.get('new_repository_name')
+                if new_repo_name:
+                    repository, _ = Repository.objects.get_or_create(repository_name=new_repo_name)
+                else:
+                    repository = None
+
+            # Classification
+            classification = form.cleaned_data.get('class_id')
+            if not classification:
+                new_class_name = form.cleaned_data.get('new_classification_name')
+                if new_class_name:
+                    classification, _ = Classification.objects.get_or_create(class_name=new_class_name)
+                else:
+                    classification = None
+
+            # Subclassification
+            subclassification = form.cleaned_data.get('subclass_id')
+            if not subclassification:
+                new_subclass_name = form.cleaned_data.get('new_subclassification_name')
+                if new_subclass_name and classification:
+                    subclassification, _ = Subclassification.objects.get_or_create(
+                        subclass_name=new_subclass_name,
+                        class_id=classification
+                    )
+                else:
+                    subclassification = None
+
+            # Subset
+            subset = form.cleaned_data.get('subset_id')
+            if not subset:
+                new_subset_name = form.cleaned_data.get('new_subset_name')
+                if new_subset_name and subclassification:
+                    subset, _ = Subset.objects.get_or_create(
+                        subset_name=new_subset_name,
+                        subclass_id=subclassification
+                    )
+                else:
+                    subset = None
+
+            # Save Stored
+            stored = form.save(commit=False)
+            stored.repository_id = repository
+            stored.class_id = classification
+            stored.subclass_id = subclassification
+            stored.subset_id = subset
+            stored.save()
             return redirect('storage_management')
 
     elif request.GET.get('delete'):
@@ -113,10 +156,14 @@ def storage_management(request):
         instance = get_object_or_404(Stored, pk=request.GET.get('edit'))
         form = StoredForm(instance=instance)
 
+    attrs = {'class': 'form-control'}
     return render(request, 'storage/storage_management.html', {
         'form': form,
-        'stored_list': stored_list
+        'stored_list': stored_list,
+        'attrs': attrs
     })
+
+
 
 
 from django.http import JsonResponse

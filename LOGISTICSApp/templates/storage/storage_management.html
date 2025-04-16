@@ -5,36 +5,127 @@
 {% block content %}
 <h2>Storage Management</h2>
 
-<button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#storageModal">
-    Add New Item
-</button>
+<div style="margin-top: 50px;">
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#storageModal">
+        Add New Item
+    </button>
+</div>
 
 <div class="modal fade" id="storageModal" tabindex="-1" role="dialog" aria-labelledby="storageModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="storageModalLabel">{% if form.instance.pk %}Update Item{% else %}Add New Item{% endif %}</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="storageModalLabel">{% if form.instance.pk %}Update Item{% else %}Add New Item{% endif %}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <!-- User -->
+                <div class="form-group mb-3">
+                    <label for="id_user_id">User:</label>
+                    {{ form.user }}
+                </div>
+            
+                <!-- Repository -->
+                <div class="form-group mb-3">
+                    <label for="id_repository_id">Repository:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.repository_id }}
+                    {{ form.new_repository_name }}
+                    </div>
+                </div>
+            
+                <!-- Classification -->
+                <div class="form-group mb-3">
+                    <label for="id_class_id">Classification:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.class_id }}
+                    {{ form.new_classification_name }}
+                    </div>
+                </div>
+                
+                <!-- Subclassification -->
+                <div class="form-group mb-3">
+                    <label for="id_subclass_id">Sub Classification:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.subclass_id }}
+                    {{ form.new_subclassification_name }}
+                    </div>
+                </div>
+                
+                <!-- Subset -->
+                <div class="form-group mb-3">
+                    <label for="id_subset_id">Subset:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.subset_id }}
+                    {{ form.new_subset_name }}
+                    </div>
+                </div>
+
+                <!-- Unit Quantity -->
+                <div class="form-group mb-3">
+                    <label for="id_unit_quantity">Unit Quantity:</label>
+                    {{ form.unit_quantity }}
+                </div>
+
+                <!-- Amount -->
+                <div class="form-group mb-3">
+                    <label for="id_amount">Amount:</label>
+                    {{ form.amount }}
+                </div>
+
+                <!-- Date Received -->
+                <div class="form-group mb-3">
+                    <label for="id_date_received">Date Received:</label>
+                    {{ form.date_received }}
+                </div>
+
+                <!-- Date Acquired -->
+                <div class="form-group mb-3">
+                    <label for="id_date_acquired">Date Acquired:</label>
+                    {{ form.date_acquired }}
+                </div>
+
+                <!-- Serial Type -->
+                <div class="form-group mb-3">
+                    <label for="id_serial_type">Serial Type:</label>
+                    {{ form.serial_type }}
+                </div>
+
+                <!-- Serial Number -->
+                <div class="form-group mb-3">
+                    <label for="id_serial_number">Serial Number:</label>
+                    {{ form.serial_number }}
+                </div>
+
+                <!-- End User -->
+                <div class="form-group mb-3">
+                    <label for="id_end_user">End User:</label>
+                    {{ form.end_user }}
+                </div>
+
+                <!-- Memo -->
+                <div class="form-group mb-3">
+                    <label for="id_store_memo">Memo:</label>
+                    {{ form.store_memo }}
+                </div>
+
+                {% if form.instance.pk %}
+                    <input type="hidden" name="store_id" value="{{ form.instance.pk }}">
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">
+                {% if form.instance.pk %}Update{% else %}Add{% endif %}
+                </button>
+            </div>
+        </form>
         </div>
-        <div class="modal-body">
-          {{ form.as_p }}
-          {% if form.instance.pk %}
-              <input type="hidden" name="store_id" value="{{ form.instance.pk }}">
-          {% endif %}
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success">
-            {% if form.instance.pk %}Update{% else %}Add{% endif %}
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
 <hr>
@@ -78,17 +169,50 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    $(document).ready(function () {
+        function toggleNewFields() {
+            if ($('#id_repository_id option:selected').text() === 'Others') {
+                $('#new_repository_name_field').show();
+            } else {
+                $('#new_repository_name_field').hide();
+            }
+
+            if ($('#id_class_id option:selected').text() === 'Others') {
+                $('#new_classification_name_field').show();
+            } else {
+                $('#new_classification_name_field').hide();
+            }
+
+            if ($('#id_subclass_id option:selected').text() === 'Others') {
+                $('#new_subclassification_name_field').show();
+            } else {
+                $('#new_subclassification_name_field').hide();
+            }
+
+            if ($('#id_subset_id option:selected').text() === 'Others') {
+                $('#new_subset_name_field').show();
+            } else {
+                $('#new_subset_name_field').hide();
+            }
+        }
+
+        $('#id_repository_id, #id_class_id, #id_subclass_id, #id_subset_id').change(function () {
+            toggleNewFields();
+        });
+
+        toggleNewFields();
+    });
+</script>
 
 <script>
     $(document).ready(function () {
         $('#storage-table').DataTable();
     
-        // Show modal if ?edit=id exists
         if (window.location.search.indexOf('edit') > -1) {
             $('#storageModal').modal('show');
         }
 
-        // When Class changes
         $('#id_class_id').on('change', function () {
             var classId = $(this).val();
             if (classId) {
@@ -104,7 +228,7 @@
                                 $('<option></option>').val(item.subclass_id).html(item.subclass_name)
                             );
                         });
-                        $('#id_subset_id').html('<option value="">---------</option>'); // Reset subsets
+                        $('#id_subset_id').html('<option value="">---------</option>');
                     }
                 });
             } else {
@@ -112,8 +236,7 @@
                 $('#id_subset_id').html('<option value="">---------</option>');
             }
         });
-    
-        // When Subclass changes
+
         $('#id_subclass_id').on('change', function () {
             var subclassId = $(this).val();
             if (subclassId) {
@@ -136,19 +259,16 @@
             }
         });
 
-        // When Cancel or Close is clicked, go to the previous page (without the edit parameter)
         $('#storageModal').on('hidden.bs.modal', function () {
-            window.history.back(); // Go back to the previous page
+            window.history.back();
         });
 
-        // When Cancel button is clicked
         $('.btn-secondary').on('click', function () {
-            window.history.back(); // Go back to the previous page
+            window.history.back();
         });
 
-        // When Close button is clicked
         $('.close').on('click', function () {
-            window.history.back(); // Go back to the previous page
+            window.history.back();
         });
     });
 </script>

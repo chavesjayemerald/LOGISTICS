@@ -1,7 +1,12 @@
 from django import forms
-from .models import Stored, Subclassification, Subset
+from .models import Stored, Subclassification, Subset, Repository, Classification
 
 class StoredForm(forms.ModelForm):
+    new_repository_name = forms.CharField(required=False, label='New Repository Name')
+    new_classification_name = forms.CharField(required=False, label='New Classification Name')
+    new_subclassification_name = forms.CharField(required=False, label='New Subclassification Name')
+    new_subset_name = forms.CharField(required=False, label='New Subset Name')
+
     class Meta:
         model = Stored
         fields = '__all__'
@@ -9,6 +14,7 @@ class StoredForm(forms.ModelForm):
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
         }
+        
 
     def __init__(self, *args, **kwargs):
         super(StoredForm, self).__init__(*args, **kwargs)
@@ -28,3 +34,13 @@ class StoredForm(forms.ModelForm):
                 self.fields['subset_id'].queryset = Subset.objects.filter(subclass_id=subclass_id)
             except (ValueError, TypeError):
                 pass
+
+        self.fields['repository_id'].required = False
+        self.fields['class_id'].required = False
+        self.fields['subclass_id'].required = False
+        self.fields['subset_id'].required = False
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+
+

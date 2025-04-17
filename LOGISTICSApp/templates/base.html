@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,7 +65,9 @@
 <body>
 
     <div class="sidebar">
-        <h3>LOGISTICS MANAGEMENT SYSTEM</h3>
+        <div class="margin row justify-content-center" style="margin-bottom: 50px;">
+            <img src="{% static 'LOGISTICSApp/images/logistics_icon.png' %}" alt="Logo" width="30%">
+        </div>
         <ul>
             <li><a href="{% url 'dashboard' %}">📊 Dashboard</a></li>
             <li><a href="{% url 'signup' %}"> 👤 Accounts</a></li>

@@ -116,10 +116,10 @@
             <th>Repository</th>
             <th>Classification</th>
             <th>Sub Classification</th>
-            <th>Memo</th>
-            <th>End User</th>
             <th>Date Received</th>
             <th>Date Acquired</th>
+            <th>End User</th>
+            <th>Memo</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -129,10 +129,10 @@
             <td>{{ ris.repository_id }}</td>
             <td>{{ ris.risclass_id }}</td>
             <td>{{ ris.rissubclass_id }}</td>
-            <td>{{ ris.ris_memo }}</td>
-            <td>{{ ris.end_user }}</td>
             <td>{{ ris.date_received }}</td>
             <td>{{ ris.date_acquired }}</td>
+            <td>{{ ris.end_user }}</td>
+            <td>{{ ris.ris_memo }}</td>
             <td>
                 <a href="?edit={{ ris.pk }}" class="btn btn-sm btn-info">Edit</a>
                 <a href="?delete={{ ris.pk }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">Delete</a>

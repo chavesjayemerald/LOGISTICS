@@ -52,6 +52,12 @@
             bottom: 20px;
             width: 100%;
         }
+        .copyright {
+            position: absolute;
+            margin-left: 20px;
+            bottom: 0px;
+            width: 100%;
+        }
         .content {
             margin-left: 250px;
             padding: 20px;
@@ -66,14 +72,19 @@
 
     <div class="sidebar">
         <div class="margin row justify-content-center" style="margin-bottom: 50px;">
-            <img src="{% static 'LOGISTICSApp/images/logistics_icon.png' %}" alt="Logo" width="30%">
+            <img src="{% static 'LOGISTICSApp/images/logistics_icon.png' %}" alt="Logo" width="20%">
         </div>
         <ul>
             <li><a href="{% url 'dashboard' %}">📊 Dashboard</a></li>
-            <li><a href="{% url 'signup' %}"> 👤 Accounts</a></li>
-            <li><a href="{% url 'storage_management' %}"> 🗄 Storage Management</a></li>
-            <li><a href="{% url 'ris_management' %}"> 🗄 RIS Management</a></li>
-            <li class="logout"><a href="{% url 'logout' %}" style="color: red;">🚪 Logout</a></li>
+            <li><a href="{% url 'signup' %}"> 👨‍🚒 Accounts</a></li>
+            <li><a > 📦 Distribution</a></li>
+            <li><a href="{% url 'storage_management' %}"> 🗄️ Storage Management</a></li>
+            <li><a href="{% url 'ris_management' %}"> 📚 RIS Management</a></li>
+            <li><a href="{% url 'lot_management' %}"> 🌄 LOT Management</a></li>
+            <li><a href="{% url 'building_management' %}"> 🏢 Building Management</a></li>
+            <li><a href="{% url 'parking_management' %}"> 🚒 Parking Management</a></li>
+            <li class="logout"><a href="{% url 'logout' %}" style="color: red;">🚪Logout</a></li>
+            <a class="copyright" style="color: rgb(255, 255, 255);">©CAPIN-CHAVES </a>
         </ul>
     </div>
 

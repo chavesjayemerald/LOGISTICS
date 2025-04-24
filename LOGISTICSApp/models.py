@@ -43,6 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     lastname = models.CharField(max_length=55)
     email_address = models.EmailField(max_length=255, null=True, blank=True)
     contact_number = models.CharField(max_length=55, null=True, blank=True)
+    rank = models.CharField(max_length=55, null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -182,3 +183,136 @@ class RIS(models.Model):
 
     def __str__(self):
         return f"{self.repository.repository_name}"
+
+
+# LOT MANAGEMENT
+class Station(models.Model):
+    station_id = models.AutoField(primary_key=True)
+    station_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_stations'
+
+    def __str__(self):
+        return self.station_name
+    
+
+class Ownership(models.Model):
+    owner_id = models.AutoField(primary_key=True)
+    owner_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_ownerships'
+
+    def __str__(self):
+        return self.owner_name
+    
+
+class Area(models.Model):
+    area_id = models.AutoField(primary_key=True)
+    area_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_areas'
+
+    def __str__(self):
+        return self.area_name
+    
+
+class LOTClassification(models.Model):
+    lotclass_id = models.AutoField(primary_key=True)
+    lotclass_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_lotclassifications'
+
+    def __str__(self):
+        return self.lotclass_name
+
+
+class LOT(models.Model):
+    lot_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    lotclass_id = models.ForeignKey(LOTClassification, on_delete=models.CASCADE, db_column='lotclass_id')
+    station_id = models.ForeignKey(Station, on_delete=models.CASCADE, db_column='station_id')
+    owner_id = models.ForeignKey(Ownership, on_delete=models.CASCADE, db_column='owner_id')
+    area_id = models.ForeignKey(Area, on_delete=models.CASCADE, db_column='area_id')
+    lot_memo = models.CharField(max_length=255, blank=True, null=True)
+    date_received = models.DateField()
+    date_acquired = models.DateField()
+
+    class Meta:
+        db_table = 'tbl_lots'
+
+    def __str__(self):
+        return f"{self.lotclass_id} - {self.station}"
+    
+
+# BUILDING MANAGEMENT
+class BuildingClassification(models.Model):
+    buildingclass_id = models.AutoField(primary_key=True)
+    buildingclass_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_buildingclassifications'
+
+    def __str__(self):
+        return self.buildingclass_name
+
+
+class Building(models.Model):
+    building_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    buildingclass_id = models.ForeignKey(BuildingClassification, on_delete=models.CASCADE, db_column='buildingclass_id')
+    station_id = models.ForeignKey(Station, on_delete=models.CASCADE, db_column='station_id')
+    owner_id = models.ForeignKey(Ownership, on_delete=models.CASCADE, db_column='owner_id')
+    area_id = models.ForeignKey(Area, on_delete=models.CASCADE, db_column='area_id')
+    building_memo = models.CharField(max_length=255, blank=True, null=True)
+    date_received = models.DateField()
+    date_acquired = models.DateField()
+
+    class Meta:
+        db_table = 'tbl_buildings'
+
+    def __str__(self):
+        return f"{self.buildingclass_id} - {self.station}"
+
+
+# PARKING MANAGEMENT
+class Location(models.Model):
+    location_id = models.AutoField(primary_key=True)
+    location_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_locations'
+
+    def __str__(self):
+        return self.location_name
+    
+
+class Vehicle(models.Model):
+    vehicle_id = models.AutoField(primary_key=True)
+    vehicle_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_vehicles'
+
+    def __str__(self):
+        return self.vehicle_name
+
+
+class Parking(models.Model):
+    parking_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    location_id = models.ForeignKey(Location, on_delete=models.CASCADE, db_column='location_id')
+    vehicle_id = models.ForeignKey(Vehicle, on_delete=models.CASCADE, db_column='vehicle_id')
+    unit_quantity = models.BigIntegerField()
+    parking_memo = models.CharField(max_length=255, blank=True, null=True)
+    date_received = models.DateField()
+    date_acquired = models.DateField()
+
+    class Meta:
+        db_table = 'tbl_parkings'
+
+    def __str__(self):
+        return f"{self.parking_id} - {self.location}"

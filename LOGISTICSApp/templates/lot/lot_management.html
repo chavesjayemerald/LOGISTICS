@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}LOT - BFP LOGISTICS{% endblock %}
+
+{% block content %}
+<h2>LOT Management</h2>
+
+<div style="margin-top: 50px;">
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#lotModal">
+        Add New Item
+    </button>
+</div>
+
+<div class="modal fade" id="lotModal" tabindex="-1" role="dialog" aria-labelledby="lotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="lotModalLabel">{% if form.instance.pk %}Update Item{% else %}Add New Item{% endif %}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <!-- User -->
+                <div class="form-group mb-3">
+                    <label for="id_user_id">User:</label>
+                    {{ form.user }}
+                </div>
+
+                <!-- Classification -->
+                <div class="form-group mb-3">
+                    <label for="id_lotclass_id">Classification:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                    {{ form.lotclass_id }}
+                    {{ form.new_lotclassification_name }}
+                    </div>
+                </div>
+
+                <!-- Ownership -->
+                <div class="form-group mb-3">
+                    <label for="id_owner_id">Ownership:</label>
+                    {{ form.owner_id }}
+                </div>
+
+                <!-- Station -->
+                <div class="form-group mb-3">
+                    <label for="id_station_id">Station:</label>
+                    {{ form.station_id }}
+                </div>
+
+                <!-- Area -->
+                <div class="form-group mb-3">
+                    <label for="id_area_id">Area:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                        {{ form.area_id }}
+                        {{ form.new_lotarea_name }}
+                    </div>    
+                </div>
+
+                <!-- Date Received -->
+                <div class="form-group mb-3">
+                    <label for="id_date_received">Date Received:</label>
+                    {{ form.date_received }}
+                </div>
+
+                <!-- Date Acquired -->
+                <div class="form-group mb-3">
+                    <label for="id_date_acquired">Date Acquired:</label>
+                    {{ form.date_acquired }}
+                </div>
+
+                <!-- Memo -->
+                <div class="form-group mb-3">
+                    <label for="id_lot_memo">Memo:</label>
+                    <textarea id="id_lot_memo" name="lot_memo" class="form-control" rows="4" style="resize: both;"></textarea>
+                </div>
+
+                {% if form.instance.pk %}
+                    <input type="hidden" name="lot_id" value="{{ form.instance.pk }}">
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">
+                {% if form.instance.pk %}Update{% else %}Add{% endif %}
+                </button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<table id="lot-table" class="table table-bordered table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>Classification</th>
+            <th>Ownership</th>
+            <th>Station</th>
+            <th>Area</th>
+            <th>Date Received</th>
+            <th>Date Acquired</th>
+            <th>Memo</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for lot in lot_list %}
+        <tr>
+            <td>{{ lot.lotclass_id }}</td>
+            <td>{{ lot.owner_id }}</td>
+            <td>{{ lot.station_id }}</td>
+            <td>{{ lot.area_id }}</td>
+            <td>{{ lot.date_received }}</td>
+            <td>{{ lot.date_acquired }}</td>
+            <td>{{ lot.lot_memo }}</td>
+            <td>
+                <a href="?edit={{ lot.pk }}" class="btn btn-sm btn-info">Edit</a>
+                <a href="?delete={{ lot.pk }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">Delete</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        function toggleNewFields() {
+            if ($('#id_lotclass_id option:selected').text() === 'Others') {
+                $('#new_lotlassification_name_field').show();
+            } else {
+                $('#new_lotclassification_name_field').hide();
+            }
+        }
+
+        $('#id_lotclass_id').change(function () {
+            toggleNewFields();
+        });
+
+        toggleNewFields();
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        function toggleNewFields() {
+            if ($('#id_area_id option:selected').text() === 'Others') {
+                $('#new_lotarea_name_field').show();
+            } else {
+                $('#new_lotarea_name_field').hide();
+            }
+        }
+
+        $('#id_area_id').change(function () {
+            toggleNewFields();
+        });
+
+        toggleNewFields();
+    });
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#lot-table').DataTable();
+
+        if (window.location.search.indexOf('edit') > -1) {
+            $('#lotModal').modal('show');
+        }
+
+        function removeQueryParam(param) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(param);
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        $('#lotModal').on('hidden.bs.modal', function () {
+            removeQueryParam('edit');
+        });
+
+        $('.btn-secondary').on('click', function () {
+            $('#lotModal').modal('hide');
+        });
+
+        $('.close').on('click', function () {
+            $('#lotModal').modal('hide');
+        });
+    });
+</script>
+{% endblock %}

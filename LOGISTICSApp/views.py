@@ -33,11 +33,6 @@ def user_logout(request):
     return redirect("login")
 
 
-@guest_required
-def home(request):
-    return render(request, 'home.html')
-
-
 # PERSONNEL / INTERN CREATION
 @login_required
 def user_signup(request):
@@ -48,6 +43,7 @@ def user_signup(request):
         firstname = request.POST.get("first_name")
         middlename = request.POST.get("middle_name")
         lastname = request.POST.get("last_name")
+        rank = request.POST.get("rank")
         gender = request.POST.get("gender")
         email_address = request.POST.get("email")
         contact_number = request.POST.get("contact_number")
@@ -67,11 +63,12 @@ def user_signup(request):
             gender=gender,
             middlename=middlename if middlename else None,
             lastname=lastname,
+            rank=rank,
             email_address=email_address,
             contact_number=contact_number
         )
 
-        messages.success(request, "Account created successfully! You can now log in.")
+        messages.success(request, "New account created successfully!")
         return redirect("login")
 
     return render(request, "authentication/signup.html")
@@ -257,3 +254,205 @@ def load_rissubclassifications(request):
     rissubclasses = RISSubclassification.objects.filter(risclass_id=risclass_id).values('rissubclass_id', 'rissubclass_name')
     return JsonResponse(list(rissubclasses), safe=False)
 
+
+# LOT MANAGEMENT
+from .models import LOT, Ownership, Station, LOTClassification, Area
+from .forms import LOTForm
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+
+@login_required
+def lot_management(request):
+    lot_list = LOT.objects.all()
+    form = LOTForm()
+
+    if request.method == 'POST':
+        lot_id = request.POST.get('lot_id')
+        instance = None
+
+        if lot_id:
+            instance = get_object_or_404(LOT, pk=lot_id)
+
+        form = LOTForm(request.POST, instance=instance)
+        
+        if form.is_valid():
+            owner = form.cleaned_data.get('owner_id')
+            if not owner:
+                new_owner_name = form.cleaned_data.get('new_lotowner_name')
+                if new_owner_name:
+                    owner, _ = Ownership.objects.get_or_create(owner_name=new_owner_name)
+
+            area = form.cleaned_data.get('area_id')
+            if not area:
+                new_area_name = form.cleaned_data.get('new_lotarea_name')
+                if new_area_name:
+                    area, _ = Area.objects.get_or_create(area_name=new_area_name)
+
+            station = form.cleaned_data.get('station_id')
+            if not station:
+                new_station_name = form.cleaned_data.get('new_lotstation_name')
+                if new_station_name:
+                    station, _ = Station.objects.get_or_create(station_name=new_station_name)
+
+            lotclassification = form.cleaned_data.get('lotclass_id')
+            if not lotclassification:
+                new_lotclass_name = form.cleaned_data.get('new_lotclassification_name')
+                if new_lotclass_name:
+                    lotclassification, _ = LOTClassification.objects.get_or_create(lotclass_name=new_lotclass_name)
+
+            lot = form.save(commit=False)
+            lot.owner_id = owner
+            lot.area_id = area
+            lot.station_id = station
+            lot.lotclass_id = lotclassification
+            lot.lot_memo = request.POST.get('lot_memo')
+            lot.save()
+            return redirect('lot_management')
+
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(LOT, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('lot_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(LOT, pk=request.GET.get('edit'))
+        form = LOTForm(instance=instance)
+
+    attrs = {'class': 'form-control'}
+    return render(request, 'lot/lot_management.html', {
+        'form': form,
+        'lot_list': lot_list,
+        'attrs': attrs
+    })
+
+
+# BUILDING MANAGEMENT
+from .models import Building, Ownership, Station, BuildingClassification, Area
+from .forms import BuildingForm
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+
+@login_required
+def building_management(request):
+    building_list = Building.objects.all()
+    form = BuildingForm()
+
+    if request.method == 'POST':
+        building_id = request.POST.get('building_id')
+        instance = None
+
+        if building_id:
+            instance = get_object_or_404(Building, pk=building_id)
+
+        form = BuildingForm(request.POST, instance=instance)
+        
+        if form.is_valid():
+            owner = form.cleaned_data.get('owner_id')
+            if not owner:
+                new_owner_name = form.cleaned_data.get('new_buildingowner_name')
+                if new_owner_name:
+                    owner, _ = Ownership.objects.get_or_create(owner_name=new_owner_name)
+
+            area = form.cleaned_data.get('area_id')
+            if not area:
+                new_area_name = form.cleaned_data.get('new_buildingarea_name')
+                if new_area_name:
+                    area, _ = Area.objects.get_or_create(area_name=new_area_name)
+
+            station = form.cleaned_data.get('station_id')
+            if not station:
+                new_station_name = form.cleaned_data.get('new_buildingstation_name')
+                if new_station_name:
+                    station, _ = Station.objects.get_or_create(station_name=new_station_name)
+
+            buildingclassification = form.cleaned_data.get('buildingclass_id')
+            if not buildingclassification:
+                new_buildingclass_name = form.cleaned_data.get('new_buildingclassification_name')
+                if new_buildingclass_name:
+                    buildingclassification, _ = BuildingClassification.objects.get_or_create(buildingclass_name=new_buildingclass_name)
+
+            building = form.save(commit=False)
+            building.owner_id = owner
+            building.area_id = area
+            building.station_id = station
+            building.buildingclass_id = buildingclassification
+            building.building_memo = request.POST.get('building_memo')
+            building.save()
+            return redirect('building_management')
+
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(Building, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('building_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(Building, pk=request.GET.get('edit'))
+        form = BuildingForm(instance=instance)
+
+    attrs = {'class': 'form-control'}
+    return render(request, 'building/building_management.html', {
+        'form': form,
+        'building_list': building_list,
+        'attrs': attrs
+    })
+
+
+# PARKING MANAGEMENT
+from .models import Parking, Location, Vehicle
+from .forms import ParkingForm
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+
+@login_required
+def parking_management(request):
+    parking_list = Parking.objects.all()
+    form = ParkingForm()
+
+    if request.method == 'POST':
+        parking_id = request.POST.get('parking_id')
+        instance = None
+
+        if parking_id:
+            instance = get_object_or_404(Parking, pk=parking_id)
+
+        form = ParkingForm(request.POST, instance=instance)
+        
+        if form.is_valid():
+            location = form.cleaned_data.get('location_id')
+            if not location:
+                new_location_name = form.cleaned_data.get('new_parkinglocation_name')
+                if new_location_name:
+                    location, _ = Location.objects.get_or_create(location_name=new_location_name)
+
+            vehicle = form.cleaned_data.get('vehicle_id')
+            if not vehicle:
+                new_vehicle_name = form.cleaned_data.get('new_parkingvehicle_name')
+                if new_vehicle_name:
+                    vehicle, _ = Vehicle.objects.get_or_create(vehicle_name=new_vehicle_name)
+
+            parking = form.save(commit=False)
+            parking.location_id = location
+            parking.vehicle_id = vehicle
+            parking.unit_quantity = request.POST.get('unit_quantity')
+            parking.parking_memo = request.POST.get('parking_memo')
+            parking.save()
+            return redirect('parking_management')
+
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(Parking, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('parking_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(Parking, pk=request.GET.get('edit'))
+        form = ParkingForm(instance=instance)
+
+    attrs = {'class': 'form-control'}
+    return render(request, 'parking/parking_management.html', {
+        'form': form,
+        'parking_list': parking_list,
+        'attrs': attrs
+    })

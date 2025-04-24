@@ -2,8 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path("login/", views.user_login, name="login"),
+    path("", views.user_login, name="login"),
     path("logout/", views.user_logout, name="logout"),
     path("signup/", views.user_signup, name="signup"),
     path("dashboard/", views.dashboard, name="dashboard"),
@@ -16,4 +15,13 @@ urlpatterns = [
     #RIS URLS
     path('ris/', views.ris_management, name='ris_management'),
     path('ajax/load-rissubclassifications/', views.load_rissubclassifications, name='ajax_load_rissubclassifications'),
+
+    #LOT URLS
+    path('lot/', views.lot_management, name='lot_management'),
+
+    #BUILDING URLS
+    path('building/', views.building_management, name='building_management'),
+
+    #PARKING URLS
+    path('parking/', views.parking_management, name='parking_management'),
 ]

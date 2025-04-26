@@ -23,12 +23,6 @@
             </button>
             </div>
             <div class="modal-body">
-                <!-- User -->
-                <div class="form-group mb-3">
-                    <label for="id_user_id">User:</label>
-                    {{ form.user }}
-                </div>
-            
                 <!-- Repository -->
                 <div class="form-group mb-3">
                     <label for="id_repository_id">Repository:</label>
@@ -110,7 +104,7 @@
                 <!-- Memo -->
                 <div class="form-group mb-3">
                     <label for="id_store_memo">Memo:</label>
-                    <textarea id="id_store_memo" name="store_memo" class="form-control" rows="4" style="resize: both;"></textarea>
+                    <textarea id="id_store_memo" name="store_memo" class="form-control" rows="10" style="resize: vertical;"></textarea>
                 </div>
                 
 
@@ -213,11 +207,9 @@
     $(document).ready(function () {
         $('#storage-table').DataTable();
 
-
         if (window.location.search.indexOf('edit') > -1) {
             $('#storageModal').modal('show');
 
-            // Trigger subclass load based on selected classification
             const classId = $('#id_class_id').val();
             if (classId) {
                 $.ajax({
@@ -231,7 +223,6 @@
                             );
                         });
 
-                        // Pre-select subclass
                         if (initialSubclassId) {
                             $('#id_subclass_id').val(initialSubclassId).trigger('change');
                         }
@@ -239,7 +230,6 @@
                 });
             }
 
-            // Then trigger subset load based on selected subclass
             const subclassId = "{{ form.subclass_id.value|default:'' }}";
             if (subclassId) {
                 $.ajax({
@@ -253,7 +243,6 @@
                             );
                         });
 
-                        // Pre-select subset
                         if (initialSubsetId) {
                             $('#id_subset_id').val(initialSubsetId);
                         }
@@ -261,7 +250,6 @@
                 });
             }
         }
-
 
         $('#id_class_id').on('change', function () {
             var classId = $(this).val();

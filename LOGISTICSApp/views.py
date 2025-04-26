@@ -6,9 +6,81 @@ from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
 from .models import User
+from .decorators import role_required
+
+# OTP MANAGEMENT
+
+from django.utils import timezone
+
+def verify_otp(request):
+    if request.method == 'POST':
+        otp = request.POST.get('otp')
+        remember = request.POST.get('remember_device')
+        temp_user_id = request.session.get('temp_user_id')
+        ip_address = request.session.get('ip_address')
+
+        try:
+            user = User.objects.get(user_id=temp_user_id)
+        except User.DoesNotExist:
+            messages.error(request, "Session expired.")
+            return redirect("login")
+
+        if otp == request.session.get('otp_code'):
+            login(request, user)
+            response = redirect("dashboard")
+
+            if remember:
+                device_token = str(uuid.uuid4())
+                TrustedDevice.objects.create(
+                    user=user,
+                    device_token=device_token,
+                    ip_address=ip_address,
+                )
+                response.set_cookie('device_token', device_token, max_age=60 * 60 * 24 * 30)
+
+            messages.success(request, "OTP verified, login successful.")
+            return response
+        else:
+            messages.error(request, "Invalid OTP.")
+            return redirect("verify_otp")
+    return render(request, 'authentication/verify_otp.html')
 
 
 # AUTHENTICATION
+from django.core.mail import send_mail
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from .models import TrustedDevice
+from django.contrib.auth import login
+from django.utils.timezone import now
+import random
+import string
+import uuid
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=6))
+
+def send_otp_email(user_email, otp):
+    subject = "Your OTP Code"
+    message = f"Your OTP code is {otp}"
+    from_email = settings.EMAIL_HOST_USER
+    send_mail(subject, message, from_email, [user_email])
+
+def send_otp(request):
+    if request.method == "POST":
+        user_email = request.POST.get("email")
+        otp = generate_otp()
+        send_otp_email(user_email, otp)
+        messages.success(request, "OTP sent to your email.")
+        return redirect('verify_otp')
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0]
+    return request.META.get('REMOTE_ADDR')
+
 @guest_required
 def user_login(request):
     if request.method == "POST":
@@ -18,14 +90,38 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
-            messages.success(request, "Login successful!")
-            return redirect("dashboard")
+            if user.status != "Active":
+                messages.error(request, "Account is inactive. Contact your station Logistics Administrator")
+                return redirect("login")
+
+            device_token = request.COOKIES.get('device_token')
+            ip_address = get_client_ip(request)
+
+            if TrustedDevice.objects.filter(user=user, device_token=device_token, ip_address=ip_address).exists():
+                login(request, user)
+                messages.success(request, "Login succesful!")
+                return redirect("dashboard")
+            else:
+                request.session['temp_user_id'] = user.user_id
+                request.session['ip_address'] = ip_address
+
+                otp = generate_otp()
+                request.session['otp_code'] = otp
+
+                send_mail(
+                    subject="Your OTP Code",
+                    message=f"Your OTP is {otp}. It is valid for 5 minutes.",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email_address],
+                    fail_silently=False,
+                )
+
+                messages.info(request, "OTP sent to your email.")
+                return redirect("verify_otp")
         else:
-            messages.error(request, "Invalid username or password")
-
-    return render(request, "authentication/login.html")
-
+            messages.error(request, "Invalid credentials.")
+            return redirect("login")
+    return render(request, 'authentication/login.html')
 
 def user_logout(request):
     logout(request)
@@ -34,44 +130,43 @@ def user_logout(request):
 
 
 # PERSONNEL / INTERN CREATION
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import get_user_model
+from .forms import UserForm
+from django.contrib.auth.decorators import login_required
+
+User = get_user_model()
+
 @login_required
-def user_signup(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
-        firstname = request.POST.get("first_name")
-        middlename = request.POST.get("middle_name")
-        lastname = request.POST.get("last_name")
-        rank = request.POST.get("rank")
-        gender = request.POST.get("gender")
-        email_address = request.POST.get("email")
-        contact_number = request.POST.get("contact_number")
+@role_required('Administrator')
+def user_management(request):
+    if 'edit' in request.GET:
+        user_id = request.GET['edit']
+        user = get_object_or_404(User, pk=user_id)
+        form = UserForm(instance=user)
+    else:
+        form = UserForm()
 
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match!")
-            return redirect("signup")
+    if request.method == 'POST':
+        if 'user_id' in request.POST:
+            user = get_object_or_404(User, pk=request.POST['user_id'])
+            form = UserForm(request.POST, request.FILES, instance=user)
+        else:
+            form = UserForm(request.POST)
+        
+        if form.is_valid():
+            form.save()
+            return redirect('user_management')
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists!")
-            return redirect("signup")
+    if 'delete' in request.GET:
+        user_id = request.GET['delete']
+        user_to_delete = get_object_or_404(User, pk=user_id)
+        user_to_delete.delete()
+        return redirect('user_management')
 
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            firstname=firstname,
-            gender=gender,
-            middlename=middlename if middlename else None,
-            lastname=lastname,
-            rank=rank,
-            email_address=email_address,
-            contact_number=contact_number
-        )
-
-        messages.success(request, "New account created successfully!")
-        return redirect("login")
-
-    return render(request, "authentication/signup.html")
+    user_list = User.objects.all()
+    
+    return render(request, 'authentication/user_management.html', {'form': form, 'user_list': user_list})
 
 
 # DASHBOARD
@@ -88,7 +183,8 @@ from .forms import StoredForm
 
 @login_required
 def storage_management(request):
-    stored_list = Stored.objects.all()
+    user_station_id = request.user.station_id
+    stored_list = Stored.objects.filter(user__station_id=user_station_id)
     form = StoredForm()
 
     if request.method == 'POST':
@@ -138,6 +234,7 @@ def storage_management(request):
                     subset = None
 
             stored = form.save(commit=False)
+            stored.user = request.user
             stored.repository_id = repository
             stored.class_id = classification
             stored.subclass_id = subclassification
@@ -162,8 +259,6 @@ def storage_management(request):
     })
 
 
-
-
 from django.http import JsonResponse
 from .models import Subclassification, Subset
 
@@ -186,7 +281,8 @@ from .forms import RISForm
 
 @login_required
 def ris_management(request):
-    ris_list = RIS.objects.all()
+    user_station_id = request.user.station_id
+    ris_list = RIS.objects.filter(user__station_id=user_station_id)
     form = RISForm()
 
     if request.method == 'POST':
@@ -221,6 +317,7 @@ def ris_management(request):
                     )
 
             ris = form.save(commit=False)
+            ris.user = request.user
             ris.repository_id = repository
             ris.risclass_id = risclassification
             ris.rissubclass_id = rissubclassification
@@ -263,7 +360,8 @@ from django.http import JsonResponse
 
 @login_required
 def lot_management(request):
-    lot_list = LOT.objects.all()
+    user_station_id = request.user.station_id
+    lot_list = LOT.objects.filter(user__station_id=user_station_id)
     form = LOTForm()
 
     if request.method == 'POST':
@@ -301,6 +399,7 @@ def lot_management(request):
                     lotclassification, _ = LOTClassification.objects.get_or_create(lotclass_name=new_lotclass_name)
 
             lot = form.save(commit=False)
+            lot.user = request.user
             lot.owner_id = owner
             lot.area_id = area
             lot.station_id = station
@@ -335,7 +434,8 @@ from django.http import JsonResponse
 
 @login_required
 def building_management(request):
-    building_list = Building.objects.all()
+    user_station_id = request.user.station_id
+    building_list = Building.objects.filter(user__station_id=user_station_id)
     form = BuildingForm()
 
     if request.method == 'POST':
@@ -373,6 +473,7 @@ def building_management(request):
                     buildingclassification, _ = BuildingClassification.objects.get_or_create(buildingclass_name=new_buildingclass_name)
 
             building = form.save(commit=False)
+            building.user = request.user
             building.owner_id = owner
             building.area_id = area
             building.station_id = station
@@ -407,7 +508,8 @@ from django.http import JsonResponse
 
 @login_required
 def parking_management(request):
-    parking_list = Parking.objects.all()
+    user_station_id = request.user.station_id
+    parking_list = Parking.objects.filter(user__station_id=user_station_id)
     form = ParkingForm()
 
     if request.method == 'POST':
@@ -433,6 +535,7 @@ def parking_management(request):
                     vehicle, _ = Vehicle.objects.get_or_create(vehicle_name=new_vehicle_name)
 
             parking = form.save(commit=False)
+            parking.user = request.user
             parking.location_id = location
             parking.vehicle_id = vehicle
             parking.unit_quantity = request.POST.get('unit_quantity')

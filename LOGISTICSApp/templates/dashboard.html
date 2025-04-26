@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 {% if messages %}
@@ -17,34 +18,45 @@
     </div>
     <div class="account-box">
         <table>
-            
             <tr>
-                <th>Fullname</th>
-                <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
-            </tr>
-            <tr>
-                <th>Email</th>
-                <td>{{ request.user.email_address}}</td>
-            </tr>
-            <tr>
-                <th>Gender</th>
-                <td>{{ request.user.gender }}</td>
-            </tr>
-            <tr>
-                <th>Contact Number</th>
-                <td>{{ request.user.contact_number }}</td>
-            </tr>
-            <tr>
-            <th>Rank</th>
-                <td>{{ request.user.rank }}</td>
-            </tr>
-            <tr>
-                <th>Date Created</th>
-                <td>{{ request.user.created_at }}</td>
+                <td style="width: 200px; text-align: center;">
+                    {% if request.user.profile_picture %}
+                        <img src="data:image/jpeg;base64,{{ request.user.profile_picture|b64encode }}" alt="Profile Picture" style="width: 408px; height: 408px; border: 10px solid #2c3e50; object-fit: cover; margin-left: 20px;">
+                    {% else %}
+                        <p>No profile picture uploaded.</p>
+                    {% endif %}
+                </td>
+                <td>
+                    <table>
+                        <tr>
+                            <th>Fullname</th>
+                            <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ request.user.email_address }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender</th>
+                            <td>{{ request.user.gender }}</td>
+                        </tr>
+                        <tr>
+                            <th>Contact Number</th>
+                            <td>{{ request.user.contact_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Rank</th>
+                            <td>{{ request.user.rank }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date Created</th>
+                            <td>{{ request.user.created_at }}</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
         </table>
     </div>
-
 </div>
 
 <style>
@@ -53,7 +65,6 @@
         max-width: 2000px;
         margin: 40px auto;
         border: 6px solid #f8b400;
-        border-radius: 6px;
         background-color: #ffffff;
         box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -63,7 +74,6 @@
         background-color: #2c3e50;
         color: white;
         padding: 20px 30px;
-        border-radius: 5px 5px 0 0;
     }
 
     .account-header h2 {

@@ -23,12 +23,6 @@
             </button>
             </div>
             <div class="modal-body">
-                <!-- User -->
-                <div class="form-group mb-3">
-                    <label for="id_user_id">User:</label>
-                    {{ form.user }}
-                </div>
-
                 <!-- Location -->
                 <div class="form-group mb-3">
                     <label for="id_location_id">Location:</label>
@@ -68,7 +62,7 @@
                 <!-- Memo -->
                 <div class="form-group mb-3">
                     <label for="id_parking_memo">Memo:</label>
-                    <textarea id="id_parking_memo" name="parking_memo" class="form-control" rows="4" style="resize: both;"></textarea>
+                    <textarea id="id_parking_memo" name="parking_memo" class="form-control" rows="10" style="resize: vertical;"></textarea>
                 </div>
 
                 {% if form.instance.pk %}

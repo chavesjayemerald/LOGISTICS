@@ -4,6 +4,36 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings 
+from django.db import models
+
+def validate_image_size(value):
+    if value.size > 1 * 512 * 512:
+        raise ValidationError("The file size should not exceed 1MB.")
+
+class TrustedDevice(models.Model):
+    trusted_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('LOGISTICSApp.User', on_delete=models.CASCADE)
+    device_token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+
+    class Meta:
+        db_table = 'tbl_trusteddevice'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.device_token}"
+
+
+class Station(models.Model):
+    station_id = models.AutoField(primary_key=True)
+    station_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'tbl_stations'
+
+    def __str__(self):
+        return self.station_name
+    
 
 # USER MANAGEMENT
 class UserManager(BaseUserManager):
@@ -35,6 +65,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('Female', 'Female'),
     )
 
+    profile_picture = models.BinaryField(null=True, blank=True)
     user_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255, unique=True, null=True, blank=True, default="single_user")
     password = models.CharField(max_length=255, null=True, blank=True, default="")
@@ -43,6 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     lastname = models.CharField(max_length=55)
     email_address = models.EmailField(max_length=255, null=True, blank=True)
     contact_number = models.CharField(max_length=55, null=True, blank=True)
+    station_id = models.ForeignKey(Station, on_delete=models.CASCADE, db_column='station_id')
     rank = models.CharField(max_length=55, null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Active')
@@ -73,6 +105,29 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.lastname}, {self.firstname}"
+    
+
+# ROLE MANAGEMENT
+class Role(models.Model):
+    role_id = models.AutoField(primary_key=True)
+    role_name = models.CharField(max_length=55, unique=True)
+
+    class Meta:
+        db_table = 'tbl_roles'
+
+    def __str__(self):
+        return self.role_name
+
+class UserRole(models.Model):
+    userRole_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_roles')
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'tbl_userroles'
+
+    def __str__(self):
+        return f"{self.user.user_id} - {self.role.role_name}"
     
 
 # STORAGE MANAGEMENT
@@ -185,17 +240,7 @@ class RIS(models.Model):
         return f"{self.repository.repository_name}"
 
 
-# LOT MANAGEMENT
-class Station(models.Model):
-    station_id = models.AutoField(primary_key=True)
-    station_name = models.CharField(max_length=255)
-
-    class Meta:
-        db_table = 'tbl_stations'
-
-    def __str__(self):
-        return self.station_name
-    
+# LOT MANAGEMENT    
 
 class Ownership(models.Model):
     owner_id = models.AutoField(primary_key=True)

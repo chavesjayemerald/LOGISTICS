@@ -4,7 +4,7 @@ from . import views
 urlpatterns = [
     path("", views.user_login, name="login"),
     path("logout/", views.user_logout, name="logout"),
-    path("signup/", views.user_signup, name="signup"),
+    path("accounts/", views.user_management, name="user_management"),
     path("dashboard/", views.dashboard, name="dashboard"),
 
     #STORAGE URLS
@@ -24,4 +24,7 @@ urlpatterns = [
 
     #PARKING URLS
     path('parking/', views.parking_management, name='parking_management'),
+
+    #OPT URLS
+    path('verify-otp/', views.verify_otp, name='verify_otp'),
 ]

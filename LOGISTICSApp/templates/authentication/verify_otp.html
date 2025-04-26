@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+<style>
+    .sidebar {
+        display: none;
+    }
+    .content {
+        margin: 0;
+        width: 100%;
+        background-color: #2c3e50;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .otp {
+        width: 300px;
+        color: white;
+        text-align: center;
+    }
+    .otp input[type="text"] {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .otp input[type="checkbox"] {
+        margin-bottom: 10px;
+    }
+    .otp button {
+        width: 100%;
+    }
+</style>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="otp">
+        <div class="margin row justify-content-center">
+            <img src="{% static 'LOGISTICSApp/images/logistics_icon.png' %}" alt="Logo" width="40%">
+        </div>
+        <div class="margin row justify-content-center">
+            <img src="{% static 'LOGISTICSApp/images/logistics_logo.png' %}" alt="Logo" width="100%">
+        </div>
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <input type="text" name="otp" class="form-control" placeholder="Enter the OTP" required>
+        <div class="form-check text-start my-2">
+            <input type="checkbox" name="remember_device" class="form-check-input" id="rememberDevice">
+            <label class="form-check-label" for="rememberDevice">Remember this device</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Verify</button>
+    </div>
+</form>
+{% endblock %}

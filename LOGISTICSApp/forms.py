@@ -1,5 +1,96 @@
 from django import forms
 from .models import Stored, Subclassification, Subset
+from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import UserCreationForm
+from .models import User, Role, UserRole
+
+class UserForm(forms.ModelForm):
+    profile_picture = forms.FileField(required=False)
+    roles = forms.ModelMultipleChoiceField(
+        queryset=Role.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput, label="Password", required=False
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput, label="Confirm Password", required=False
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'firstname', 'middlename', 'lastname', 'email_address', 'contact_number', 'station_id', 'rank', 'gender', 'status']
+
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields['roles'].initial = self.instance.user_roles.values_list('role', flat=True)
+
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxSelectMultiple):
+                field.widget.attrs['class'] = 'form-control'
+
+    def clean_profile_picture(self):
+        image = self.cleaned_data.get('profile_picture')
+        if image and image.size > 1024 * 1024:  # 1MB
+            raise ValidationError("Image file too large ( > 1MB ).")
+        return image
+
+    def clean_confirm_password(self):
+        password = self.cleaned_data.get('password')
+        confirm_password = self.cleaned_data.get('confirm_password')
+        
+        if password and password != confirm_password:
+            raise ValidationError("Password and Confirm Password do not match.")
+        return confirm_password
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        if self.cleaned_data.get('profile_picture'):
+            user.profile_picture = self.cleaned_data['profile_picture'].read()
+
+        password = self.cleaned_data.get('password')
+        
+        if password:
+            user.set_password(password)
+        elif not password and self.instance.pk:
+            user.password = self.instance.password  
+
+        if commit:
+            user.save()
+            UserRole.objects.filter(user=user).delete()
+            selected_roles = self.cleaned_data.get('roles')
+            for role in selected_roles:
+                UserRole.objects.create(user=user, role=role)
+        return user
+
+    def clean_email_address(self):
+        email = self.cleaned_data.get('email_address')
+        if email:
+            qs = User.objects.filter(email_address=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("This email is already in use.")
+        return email
+
+    def clean_contact_number(self):
+        contact_number = self.cleaned_data.get('contact_number')
+        if contact_number and len(contact_number) < 10:
+            raise forms.ValidationError("Please enter a valid contact number.")
+        return contact_number
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if self.instance and self.instance.username == username:
+            return username
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("User with this Username already exists.")
+        return username
+
 
 # STORAGE FORM
 class StoredForm(forms.ModelForm):
@@ -11,6 +102,7 @@ class StoredForm(forms.ModelForm):
     class Meta:
         model = Stored
         fields = '__all__'
+        exclude = ['user']
         widgets = {
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
@@ -44,7 +136,6 @@ class StoredForm(forms.ModelForm):
             field.widget.attrs['class'] = 'form-control'
 
 
-
 # RIS FORM
 from django import forms
 from .models import RIS, RISSubclassification
@@ -57,6 +148,7 @@ class RISForm(forms.ModelForm):
     class Meta:
         model = RIS
         fields = '__all__'
+        exclude = ['user']
         widgets = {
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
@@ -85,7 +177,6 @@ class RISForm(forms.ModelForm):
 from django import forms
 from .models import LOT, LOTClassification, Ownership, Station, Area
 
-
 class LOTForm(forms.ModelForm):
     new_lotclassification_name = forms.CharField(required=False, label='New LOT Classification Name')
     new_lotarea_name = forms.CharField(required=False, label='New Area Name')
@@ -94,6 +185,7 @@ class LOTForm(forms.ModelForm):
     class Meta:
         model = LOT
         fields = '__all__'
+        exclude = ['user']
         widgets = {
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
@@ -122,6 +214,7 @@ class BuildingForm(forms.ModelForm):
     class Meta:
         model = Building
         fields = '__all__'
+        exclude = ['user']
         widgets = {
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
@@ -150,6 +243,7 @@ class ParkingForm(forms.ModelForm):
     class Meta:
         model = Parking
         fields = '__all__'
+        exclude = ['user']
         widgets = {
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),

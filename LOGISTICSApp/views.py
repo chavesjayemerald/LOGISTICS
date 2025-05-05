@@ -129,7 +129,7 @@ def user_logout(request):
     return redirect("login")
 
 
-# PERSONNEL / INTERN CREATION
+# PERSONNEL CREATION
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import get_user_model
 from .forms import UserForm

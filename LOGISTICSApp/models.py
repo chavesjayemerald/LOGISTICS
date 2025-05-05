@@ -4,11 +4,10 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings 
-from django.db import models
 
 def validate_image_size(value):
     if value.size > 1 * 512 * 512:
-        raise ValidationError("The file size should not exceed 1MB.")
+        raise ValidationError("The file size should not exceed 512KB.")
 
 class TrustedDevice(models.Model):
     trusted_id = models.AutoField(primary_key=True)

@@ -6,8 +6,8 @@
 <h2>Account Management</h2>
 
 <div style="margin-top: 50px;">
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#userModal">
-        Add New User
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#userModal">
+        Create New Personnel
     </button>
 </div>
 
@@ -139,4 +139,74 @@
         });
     });
 </script>
+
+<script>
+    $(document).ready(function () {
+        $('#user-table').DataTable();
+
+        if (window.location.search.indexOf('edit') > -1) {
+            $('#userModal').modal('show');
+
+            const classId = $('#id_class_id').val();
+            if (classId) {
+                $.ajax({
+                    url: '/ajax/load-subclassifications/',
+                    data: { 'class_id': classId },
+                    success: function (data) {
+                        $('#id_subclass_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subclass_id').append(
+                                $('<option></option>').val(item.subclass_id).html(item.subclass_name)
+                            );
+                        });
+
+                        if (initialSubclassId) {
+                            $('#id_subclass_id').val(initialSubclassId).trigger('change');
+                        }
+                    }
+                });
+            }
+
+            const subclassId = "{{ form.subclass_id.value|default:'' }}";
+            if (subclassId) {
+                $.ajax({
+                    url: '/ajax/load-subsets/',
+                    data: { 'subclass_id': subclassId },
+                    success: function (data) {
+                        $('#id_subset_id').html('<option value="">---------</option>');
+                        $.each(data, function (index, item) {
+                            $('#id_subset_id').append(
+                                $('<option></option>').val(item.subset_id).html(item.subset_name)
+                            );
+                        });
+
+                        if (initialSubsetId) {
+                            $('#id_subset_id').val(initialSubsetId);
+                        }
+                    }
+                });
+            }
+        }
+
+        function removeQueryParam(param) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(param);
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        $('#userModal').on('hidden.bs.modal', function () {
+            removeQueryParam('edit');
+        });
+
+        $('.btn-secondary').on('click', function () {
+            $('#userModal').modal('hide');
+        });
+
+        $('.close').on('click', function () {
+            $('#userModal').modal('hide');
+        });
+
+    });
+</script>
+
 {% endblock %}

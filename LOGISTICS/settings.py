@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'LOGISTICS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'logistics',
+        'NAME': 'logisticsv3',
         'USER': 'root',
         'PASSWORD': '',
         'HOST': 'localhost',

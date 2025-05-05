@@ -185,6 +185,11 @@ from .forms import StoredForm
 def storage_management(request):
     user_station_id = request.user.station_id
     stored_list = Stored.objects.filter(user__station_id=user_station_id)
+    for item in stored_list:
+        if item.amount is not None:
+            item.formatted_amount = f"₱{item.amount}"
+        else:
+            item.formatted_amount = "₱0.00"
     form = StoredForm()
 
     if request.method == 'POST':
@@ -258,7 +263,6 @@ def storage_management(request):
         'attrs': attrs
     })
 
-
 from django.http import JsonResponse
 from .models import Subclassification, Subset
 
@@ -273,7 +277,6 @@ def load_subsets(request):
     return JsonResponse(list(subsets), safe=False)
 
 
-
 # RIS MANAGEMENT
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import RIS, RISClassification, RISSubclassification
@@ -283,7 +286,14 @@ from .forms import RISForm
 def ris_management(request):
     user_station_id = request.user.station_id
     ris_list = RIS.objects.filter(user__station_id=user_station_id)
+    for item in ris_list:
+        if item.amount is not None:
+            item.formatted_amount = f"₱{item.amount}"
+        else:
+            item.formatted_amount = "₱0.00"
     form = RISForm()
+
+    
 
     if request.method == 'POST':
         ris_id = request.POST.get('ris_id')
@@ -407,7 +417,6 @@ def lot_management(request):
             lot.lot_memo = request.POST.get('lot_memo')
             lot.save()
             return redirect('lot_management')
-
 
     elif request.GET.get('delete'):
         instance = get_object_or_404(LOT, pk=request.GET.get('delete'))
@@ -559,3 +568,121 @@ def parking_management(request):
         'parking_list': parking_list,
         'attrs': attrs
     })
+
+# DISTRIBUTION MANAGEMENT
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from .models import Distribution
+from .forms import DistributionForm
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def distribution_management(request):
+    user_station_id = request.user.station_id
+    distributions = Distribution.objects.filter(user__station_id=user_station_id)
+
+    for item in distributions:
+        item.formatted_amount = f"₱{item.amount}" if item.amount else "₱0.00"
+        item.repo_name = item.repository_name()
+
+    form = DistributionForm(user=request.user)
+
+    if request.method == 'POST':
+        dist_id = request.POST.get('distribute_id')
+        instance = get_object_or_404(Distribution, pk=dist_id) if dist_id else None
+        form = DistributionForm(request.POST, instance=instance)
+
+        if form.is_valid():
+            distribution = form.save(commit=False)
+            distribution.user = request.user
+            distribution.repository_id = int(form.cleaned_data['repository_id'])
+            distribution.save()
+            return redirect('distribution_management')
+
+    elif request.GET.get('edit'):
+        instance = get_object_or_404(Distribution, pk=request.GET.get('edit'))
+        form = DistributionForm(instance=instance)
+
+    elif request.GET.get('delete'):
+        instance = get_object_or_404(Distribution, pk=request.GET.get('delete'))
+        instance.delete()
+        return redirect('distribution_management')
+
+    attrs = {'class': 'form-control'}
+    return render(request, 'distribution/distribution_management.html', {
+        'form': form,
+        'distributions': distributions,
+        'attrs': attrs
+    })
+
+
+from django.http import JsonResponse
+from .models import Distribution
+
+def distribution_detail(request, pk):
+    try:
+        d = Distribution.objects.select_related(
+            'store__repository_id',
+            'store__class_id',
+            'store__subclass_id',
+            'store__subset_id',
+            'ris__repository_id',
+            'ris__risclass_id',
+            'ris__rissubclass_id',
+        ).get(pk=pk)
+
+        store = d.store
+        ris = d.ris
+
+        data = {
+            'distribution_id': d.distribute_id,
+            'quantity': d.unit_quantity,
+            'amount': float(d.amount) if d.amount else 0.00,
+            'memo': d.distribution_memo,
+            'date_received': d.date_received.strftime('%Y-%m-%d'),
+            'date_acquired': d.date_acquired.strftime('%Y-%m-%d'),
+            'end_user': d.end_user,
+            'repository': d.repository_name(),
+            'station': getattr(d.user.station, 'station_name', 'N/A'),
+
+            # Store path
+            'store': {
+                'store_number': store.store_id,
+                'original_memo': str(store.store_memo),
+                'repository': str(store.repository_id),
+                'original_date_received': str(store.date_received),
+                'original_date_acquired': str(store.date_acquired),
+                'original_end_user': str(store.end_user),
+                'original_unit_quantity': str(store.unit_quantity),
+                'original_amount': str(store.amount),
+                'original_unit_assignment': str(store.unit_assignment),
+                'serial_type': str(store.serial_type),
+                'bracket_number': str(store.bracket_number),
+                'property_number': str(store.property_number),
+                'serial_number': str(store.serial_number),
+                'classification': str(store.class_id),
+                'subclassification': str(store.subclass_id),
+                'subset': str(store.subset_id) if store.subset_id else 'N/A',
+                'item_name': str(store),
+            } if store else {},
+
+            # RIS path
+            'ris': {
+                'ris_number': ris.ris_id,
+                'original_memo': str(ris.ris_memo),
+                'repository': str(ris.repository_id),
+                'original_date_received': str(ris.date_received),
+                'original_date_acquired': str(ris.date_acquired),
+                'original_end_user': str(ris.end_user),
+                'original_unit_quantity': str(ris.unit_quantity),
+                'original_amount': str(ris.amount),
+                'risclassification': str(ris.risclass_id),
+                'rissubclassification': str(ris.rissubclass_id),
+                'item_name': str(ris),
+            } if ris else {},
+        }
+
+        return JsonResponse(data)
+
+    except Distribution.DoesNotExist:
+        return JsonResponse({'error': 'Distribution not found'}, status=404)

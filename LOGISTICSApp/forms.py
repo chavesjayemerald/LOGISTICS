@@ -93,11 +93,26 @@ class UserForm(forms.ModelForm):
 
 
 # STORAGE FORM
+# forms.py
+from django import forms
+from .models import Stored
+from .models import Subclassification, Subset
+
+SERIAL_TYPE_CHOICES = (
+    ('', '---------'),
+    ('ICS', 'ICS'),
+    ('PAR', 'PAR'),
+)
+
 class StoredForm(forms.ModelForm):
     new_repository_name = forms.CharField(required=False, label='New Repository Name')
     new_classification_name = forms.CharField(required=False, label='New Classification Name')
     new_subclassification_name = forms.CharField(required=False, label='New Subclassification Name')
     new_subset_name = forms.CharField(required=False, label='New Subset Name')
+
+    # Additional fields for serial type and number
+    serial_prefix = forms.ChoiceField(choices=SERIAL_TYPE_CHOICES, label='Serial Type')
+    bracket_number = forms.CharField(label='Serial bracket')
 
     class Meta:
         model = Stored
@@ -107,7 +122,6 @@ class StoredForm(forms.ModelForm):
             'date_received': forms.DateInput(attrs={'type': 'date'}),
             'date_acquired': forms.DateInput(attrs={'type': 'date'}),
         }
-        
 
     def __init__(self, *args, **kwargs):
         super(StoredForm, self).__init__(*args, **kwargs)
@@ -134,6 +148,17 @@ class StoredForm(forms.ModelForm):
         self.fields['subset_id'].required = False
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        prefix = cleaned_data.get('serial_prefix')
+        number = cleaned_data.get('bracket_number')
+
+        if prefix and number:
+            combined = f"{prefix}# {number.strip()}"
+            cleaned_data['serial_type'] = combined
+
+        return cleaned_data
 
 
 # RIS FORM
@@ -255,4 +280,44 @@ class ParkingForm(forms.ModelForm):
         self.fields['vehicle_id'].required = False
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
-        
+
+
+# DISTRIBUTION FORM
+from django import forms
+from .models import Distribution, Stored, RIS, Repository
+
+class DistributionForm(forms.ModelForm):
+    repository_id = forms.ChoiceField(choices=[], required=True, label='Repository')
+
+    class Meta:
+        model = Distribution
+        fields = ['store', 'ris', 'repository_id', 'distribution_memo', 'end_user',
+                  'date_received', 'date_acquired', 'unit_quantity', 'amount']
+        widgets = {
+            'date_received': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'date_acquired': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'store': forms.Select(attrs={'class': 'form-control', 'id': 'store-field'}),
+            'ris': forms.Select(attrs={'class': 'form-control', 'id': 'ris-field'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Pop user from kwargs if passed
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Repository choices
+        repo_choices = [(repo.repository_id, repo.repository_name) for repo in Repository.objects.all()]
+        self.fields['repository_id'].choices = repo_choices
+        self.fields['repository_id'].widget.attrs.update({'class': 'form-control'})
+
+        self.fields['store'].required = False
+        self.fields['ris'].required = False
+
+        # Only show stores/ris created by users in the same station
+        if user:
+            station_id = user.station_id
+            self.fields['store'].queryset = Stored.objects.filter(user__station_id=station_id)
+            self.fields['ris'].queryset = RIS.objects.filter(user__station_id=station_id)
+
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-control')

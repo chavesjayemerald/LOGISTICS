@@ -6,8 +6,8 @@
 <h2>Storage Management</h2>
 
 <div style="margin-top: 50px;">
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#storageModal">
-        Add New Item
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#storageModal">
+        Add New Store
     </button>
 </div>
 
@@ -59,6 +59,12 @@
                     </div>
                 </div>
 
+                <!-- Unit Assignment -->
+                <div class="form-group mb-3">
+                    <label for="id_unit_assignment">Unit Assignment:</label>
+                    {{ form.unit_assignment }}
+                </div>
+
                 <!-- Unit Quantity -->
                 <div class="form-group mb-3">
                     <label for="id_unit_quantity">Unit Quantity:</label>
@@ -82,11 +88,19 @@
                     <label for="id_date_acquired">Date Acquired:</label>
                     {{ form.date_acquired }}
                 </div>
-
                 <!-- Serial Type -->
                 <div class="form-group mb-3">
-                    <label for="id_serial_type">Serial Type:</label>
-                    {{ form.serial_type }}
+                    <label for="id_serial_prefix">Bracket:</label>
+                    <div class="d-flex gap-2" style="gap: 10px;">
+                        {{ form.serial_prefix }}
+                        {{ form.bracket_number }}
+                    </div>
+                </div>
+
+                <!-- Property Number -->
+                <div class="form-group mb-3">
+                    <label for="id_property_number">Property Number:</label>
+                    {{ form.property_number }}
                 </div>
 
                 <!-- Serial Number -->
@@ -107,7 +121,6 @@
                     <textarea id="id_store_memo" name="store_memo" class="form-control" rows="10" style="resize: vertical;"></textarea>
                 </div>
                 
-
                 {% if form.instance.pk %}
                     <input type="hidden" name="store_id" value="{{ form.instance.pk }}">
                 {% endif %}
@@ -131,12 +144,15 @@
             <th>Repository</th>
             <th>Classification</th>
             <th>Sub Classification</th>
-            <th>Subset</th>
-            <th>Memo</th>
+            <th>Subset</th> 
+            <th>Unit Assignment</th>
+            <th>Amount</th>
             <th>End User</th>
             <th>Date Received</th>
             <th>Date Acquired</th>
-            <th>Serial</th>
+            <th>Bracket</th>
+            <th>Property Number</th>
+            <th>Serial Number</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -147,11 +163,14 @@
             <td>{{ store.class_id }}</td>
             <td>{{ store.subclass_id }}</td>
             <td>{{ store.subset_id|default:"—" }}</td>
-            <td>{{ store.store_memo }}</td>
+            <td>{{ store.unit_assignment }}</td>
+            <td>{{ store.formatted_amount }}</td>
             <td>{{ store.end_user }}</td>
             <td>{{ store.date_received }}</td>
             <td>{{ store.date_acquired }}</td>
-            <td>{{ store.serial_type }}# {{ store.serial_number }}</td>
+            <td>{{ store.serial_type }} </td>
+            <td>{{ store.property_number }}</td>
+            <td>{{ store.serial_number }}</td>
             <td>
                 <a href="?edit={{ store.pk }}" class="btn btn-sm btn-info">Edit</a>
                 <a href="?delete={{ store.pk }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">Delete</a>
@@ -315,6 +334,15 @@
             $('#risModal').modal('hide');
         });
 
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const prefixSelect = document.getElementById('id_serial_prefix');
+        const serialInput = document.getElementById('id_bracket_number');
+   
+        
     });
 </script>
     

@@ -6,8 +6,8 @@
 <h2>LOT Management</h2>
 
 <div style="margin-top: 50px;">
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#lotModal">
-        Add New Item
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#lotModal">
+        Add New Lot
     </button>
 </div>
 
@@ -55,13 +55,13 @@
 
                 <!-- Date Received -->
                 <div class="form-group mb-3">
-                    <label for="id_date_received">Date Received:</label>
+                    <label for="id_date_received">Date Acquired:</label>
                     {{ form.date_received }}
                 </div>
 
                 <!-- Date Acquired -->
                 <div class="form-group mb-3">
-                    <label for="id_date_acquired">Date Acquired:</label>
+                    <label for="id_date_acquired">Date Activated:</label>
                     {{ form.date_acquired }}
                 </div>
 
@@ -95,8 +95,8 @@
             <th>Ownership</th>
             <th>Station</th>
             <th>Area</th>
-            <th>Date Received</th>
             <th>Date Acquired</th>
+            <th>Date Activated</th>
             <th>Memo</th>
             <th>Actions</th>
         </tr>

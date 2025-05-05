@@ -25,6 +25,9 @@ urlpatterns = [
     #PARKING URLS
     path('parking/', views.parking_management, name='parking_management'),
 
+    #DISTRIBUTION URLS
+    path('distributions/', views.distribution_management, name='distribution_management'),
+
     #OPT URLS
     path('verify-otp/', views.verify_otp, name='verify_otp'),
 ]

@@ -6,8 +6,8 @@
 <h2>Parking Management</h2>
 
 <div style="margin-top: 50px;">
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#parkingModal">
-        Add New Item
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#parkingModal">
+        Add New Parking
     </button>
 </div>
 
@@ -39,6 +39,24 @@
                     {{ form.vehicle_id }}
                     {{ form.new_parkingvehicle_name }}
                     </div>
+                </div>
+
+                <!-- Plate Number -->
+                <div class="form-group mb-3">
+                    <label for="id_plate_number">Plate_Number:</label>
+                    {{ form.plate_number }}
+                </div>
+
+                <!-- Engine Number -->
+                <div class="form-group mb-3">
+                    <label for="id_engine_number">Engine_Number:</label>
+                    {{ form.engine_number }}
+                </div>
+
+                <!-- Chassis Number -->
+                <div class="form-group mb-3">
+                    <label for="id_Chassis_number">Chassis_Number:</label>
+                    {{ form.chassis_number }}
                 </div>
 
                 <!-- Unit Quantity -->
@@ -87,6 +105,9 @@
         <tr>
             <th>Location</th>
             <th>Vehicle</th>
+            <th>Plate Number</th>
+            <th>Engine Number</th>
+            <th>Chassis Number</th>
             <th>Unit Quantity</th>
             <th>Date Received</th>
             <th>Date Acquired</th>
@@ -99,6 +120,9 @@
         <tr>
             <td>{{ parking.location_id }}</td>
             <td>{{ parking.vehicle_id }}</td>
+            <td>{{ parking.plate_number }}</td>
+            <td>{{ parking.engine_number }}</td>
+            <td>{{ parking.chassis_number }}</td>
             <td>{{ parking.unit_quantity }}</td>
             <td>{{ parking.date_received }}</td>
             <td>{{ parking.date_acquired }}</td>

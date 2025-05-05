@@ -4,10 +4,11 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings 
+from django.db import models
 
 def validate_image_size(value):
     if value.size > 1 * 512 * 512:
-        raise ValidationError("The file size should not exceed 512KB.")
+        raise ValidationError("The file size should not exceed 524kb.")
 
 class TrustedDevice(models.Model):
     trusted_id = models.AutoField(primary_key=True)
@@ -180,20 +181,24 @@ class Stored(models.Model):
     class_id = models.ForeignKey(Classification, on_delete=models.CASCADE, db_column='class_id')
     subclass_id = models.ForeignKey(Subclassification, on_delete=models.CASCADE, db_column='subclass_id')
     subset_id = models.ForeignKey(Subset, on_delete=models.CASCADE, db_column='subset_id', blank=True, null=True)
-    store_memo = models.CharField(max_length=255, blank=True, null=True)
+    store_memo = models.TextField(blank=True, null=True)
     date_received = models.DateField()
     date_acquired = models.DateField()
     end_user = models.CharField(max_length=255)
     unit_quantity = models.BigIntegerField()
-    amount = models.BigIntegerField()
-    serial_type = models.CharField(max_length=3, choices=SERIAL_CHOICES)
-    serial_number = models.BigIntegerField()
+    amount = models.DecimalField(decimal_places=2, max_digits=15)
+    serial_type = models.CharField(max_length=100, blank=True, null=True)
+    bracket_number = models.CharField(max_length=255, blank=True, null=True)
+    unit_assignment = models.CharField(max_length=50, blank=True, null=True)   
+    property_number = models.BigIntegerField(blank=True, null=True)  
+    serial_number = models.CharField(max_length=255, blank=True, null=True)
+
 
     class Meta:
         db_table = 'tbl_stored'
 
     def __str__(self):
-        return f"{self.repository.repository_name} - {self.serial_type} #{self.serial_number}"
+        return f"{self.repository_id.repository_name} - {self.class_id}, {self.subclass_id}, #{self.bracket_number} #{self.serial_number}"
 
 
 
@@ -225,18 +230,18 @@ class RIS(models.Model):
     repository_id = models.ForeignKey(Repository, on_delete=models.CASCADE, db_column='repository_id')
     risclass_id = models.ForeignKey(RISClassification, on_delete=models.CASCADE, db_column='risclass_id')
     rissubclass_id = models.ForeignKey(RISSubclassification, on_delete=models.CASCADE, db_column='rissubclass_id')
-    ris_memo = models.CharField(max_length=255, blank=True, null=True)
+    ris_memo = models.TextField(blank=True, null=True)
     date_received = models.DateField()
     date_acquired = models.DateField()
     end_user = models.CharField(max_length=255)
     unit_quantity = models.BigIntegerField()
-    amount = models.BigIntegerField()
+    amount = models.DecimalField(decimal_places=2, max_digits=15)
 
     class Meta:
         db_table = 'tbl_ris'
 
     def __str__(self):
-        return f"{self.repository.repository_name}"
+        return f"{self.repository_id.repository_name} - {self.risclass_id}, {self.rissubclass_id}"
 
 
 # LOT MANAGEMENT    
@@ -281,7 +286,7 @@ class LOT(models.Model):
     station_id = models.ForeignKey(Station, on_delete=models.CASCADE, db_column='station_id')
     owner_id = models.ForeignKey(Ownership, on_delete=models.CASCADE, db_column='owner_id')
     area_id = models.ForeignKey(Area, on_delete=models.CASCADE, db_column='area_id')
-    lot_memo = models.CharField(max_length=255, blank=True, null=True)
+    lot_memo = models.TextField(blank=True, null=True)
     date_received = models.DateField()
     date_acquired = models.DateField()
 
@@ -311,7 +316,7 @@ class Building(models.Model):
     station_id = models.ForeignKey(Station, on_delete=models.CASCADE, db_column='station_id')
     owner_id = models.ForeignKey(Ownership, on_delete=models.CASCADE, db_column='owner_id')
     area_id = models.ForeignKey(Area, on_delete=models.CASCADE, db_column='area_id')
-    building_memo = models.CharField(max_length=255, blank=True, null=True)
+    building_memo = models.TextField(blank=True, null=True)
     date_received = models.DateField()
     date_acquired = models.DateField()
 
@@ -350,8 +355,11 @@ class Parking(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     location_id = models.ForeignKey(Location, on_delete=models.CASCADE, db_column='location_id')
     vehicle_id = models.ForeignKey(Vehicle, on_delete=models.CASCADE, db_column='vehicle_id')
+    plate_number = models.CharField(max_length=50)
+    engine_number = models.CharField(max_length=25)
+    chassis_number = models.CharField(max_length=25)
     unit_quantity = models.BigIntegerField()
-    parking_memo = models.CharField(max_length=255, blank=True, null=True)
+    parking_memo = models.TextField(blank=True, null=True)
     date_received = models.DateField()
     date_acquired = models.DateField()
 
@@ -359,4 +367,32 @@ class Parking(models.Model):
         db_table = 'tbl_parkings'
 
     def __str__(self):
-        return f"{self.parking_id} - {self.location}"
+        return f"{self.parking_id} - {self.location_id}  #{self.plate_number} #{self.engine_number} #{self.chassis_number}"
+    
+
+# DISTRIBUTION MANAGEMENT
+class Distribution(models.Model):
+    distribute_id = models.AutoField(primary_key=True)
+    store = models.ForeignKey(Stored, on_delete=models.CASCADE, db_column='store_id')
+    ris = models.ForeignKey(RIS, on_delete=models.CASCADE, db_column='ris_id')
+    repository_id = models.IntegerField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='user_id')
+    end_user = models.CharField(max_length=255, blank=True, null=True)
+    distribution_memo = models.TextField(blank=True, null=True)
+    date_received = models.DateField()
+    date_acquired = models.DateField()
+    unit_quantity = models.BigIntegerField(blank=True, null=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    class Meta:
+        db_table = 'tbl_distributions'
+
+    def __str__(self):
+        return f"Distribution #{self.distribute_id} to Repo #{self.repository_id}"
+
+    def repository_name(self):
+        try:
+            return Repository.objects.get(repository_id=self.repository_id).repository_name
+        except Repository.DoesNotExist:
+            return "Unknown Repository"
+

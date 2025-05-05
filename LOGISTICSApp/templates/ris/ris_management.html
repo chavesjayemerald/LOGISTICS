@@ -6,8 +6,8 @@
 <h2>RIS Management</h2>
 
 <div style="margin-top: 50px;">
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#risModal">
-        Add New Item
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#risModal">
+        Add New RIS
     </button>
 </div>
 
@@ -110,6 +110,7 @@
             <th>Repository</th>
             <th>Classification</th>
             <th>Sub Classification</th>
+            <th>Amount</th>
             <th>Date Received</th>
             <th>Date Acquired</th>
             <th>End User</th>
@@ -123,6 +124,7 @@
             <td>{{ ris.repository_id }}</td>
             <td>{{ ris.risclass_id }}</td>
             <td>{{ ris.rissubclass_id }}</td>
+            <td>{{ ris.formatted_amount }}</td>
             <td>{{ ris.date_received }}</td>
             <td>{{ ris.date_acquired }}</td>
             <td>{{ ris.end_user }}</td>
@@ -217,6 +219,14 @@
             $('#risModal').modal('hide');
         });
 
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const serialInput = document.getElementById('id_bracket_number');
+   
+        
     });
 </script>
 

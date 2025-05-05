@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}DISTRIBUTION - BFP LOGISTICS{% endblock %}
+
+{% block content %}
+<h2>Distribution Management</h2>
+
+<!-- Trigger Button -->
+<div style="margin-top: 50px;">
+    <button type="button" class="btn btn-info btn-primary mb-3" data-toggle="modal" data-target="#distributionModal">
+        Distribute
+    </button>
+</div>
+
+
+<!-- Creation/Update Modal -->
+<div class="modal fade" id="distributionModal" tabindex="-1" role="dialog" aria-labelledby="distributionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="distributionModalLabel">
+                    {% if form.instance.pk %}Update{% else %}Create{% endif %} Distribution
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% if form.instance.pk %}
+                    <input type="hidden" name="distribute_id" value="{{ form.instance.pk }}">
+                {% endif %}
+                <div class="form-group">
+                    <label>Select Source:</label><br>
+                    <input type="radio" name="source_type" value="store" id="radio-store"
+                           {% if form.initial.store %}checked{% endif %}>
+                    <label for="radio-store">Store</label>
+                    <input type="radio" name="source_type" value="ris" id="radio-ris"
+                           {% if form.initial.ris %}checked{% endif %}>
+                    <label for="radio-ris">RIS</label>
+                </div>
+                <div id="store-field-wrapper" style="display: none;" class="form-group">
+                    {{ form.store.label_tag }} {{ form.store }}
+                </div>
+                <div id="ris-field-wrapper" style="display: none;" class="form-group">
+                    {{ form.ris.label_tag }} {{ form.ris }}
+                </div>
+                <div class="form-group">{{ form.repository_id.label_tag }} {{ form.repository_id }}</div>
+                <div class="form-group">{{ form.end_user.label_tag }} {{ form.end_user }}</div>
+                <div class="form-group">{{ form.date_received.label_tag }} {{ form.date_received }}</div>
+                <div class="form-group">{{ form.date_acquired.label_tag }} {{ form.date_acquired }}</div>
+                <div class="form-group">{{ form.unit_quantity.label_tag }} {{ form.unit_quantity }}</div>
+                <div class="form-group">{{ form.amount.label_tag }} {{ form.amount }}</div>
+                <div class="form-group">{{ form.distribution_memo.label_tag }} {{ form.distribution_memo }}</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">
+                    {% if form.instance.pk %}Confirm{% else %}Create{% endif %}
+                </button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal fade" id="summaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="summaryModalLabel">Full Distribution Summary</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Distribution Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Distribution Details</h6>
+                        <a href="#" id="edit-distribution" class="btn btn-info btn-sm">Edit</a>
+                    </div>                    
+                    <div class="card-body p-3">
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>ID Number:</strong> <span id="summary-id"></span></div>
+                            <div class="col-md-6"><strong>Repository:</strong> <span id="summary-repository"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Date Received:</strong> <span id="summary-date-received"></span></div>
+                            <div class="col-md-6"><strong>Date Acquired:</strong> <span id="summary-date-acquired"></span></div>
+                            <div class="col-md-6"><strong>End User:</strong> <span id="summary-end-user"></span></div>
+                            <div class="col-md-6"><strong>Unit Quantity:</strong> <span id="summary-unit"></span></div>
+                            <div class="col-md-6"><strong>Amount:</strong> <span id="summary-amount" class="text-success font-weight-bold"></span></div>
+                            <div class="col-md-12" style="margin-top: 20px;"><strong>Memo:</strong> <div id="summary-memo" class="memo-paragraph"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Original Store Details -->
+                <div class="card mb-4" id="store-summary-section">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0">Original Storage Details</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Class:</strong> <span id="summary-store-class"></span></div>
+                            <div class="col-md-6"><strong>Subclass:</strong> <span id="summary-store-subclass"></span></div>
+                            <div class="col-md-6"><strong>Subset:</strong> <span id="summary-store-subset"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>ID Number:</strong> <span id="summary-store-number"></span></div>
+                            <div class="col-md-6"><strong>Repository:</strong> <span id="summary-store-repo"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Date Received:</strong> <span id="summary-store-original_date_received"></span></div>
+                            <div class="col-md-6"><strong>Date Acquired:</strong> <span id="summary-store-original_date_acquired"></span></div>
+                            <div class="col-md-6"><strong>End User:</strong> <span id="summary-store-original_end_user"></span></div>
+                            <div class="col-md-6"><strong>Unit Quantity:</strong> <span id="summary-store-original_unit_quantity"></span></div>
+                            <div class="col-md-6"><strong>Amount:</strong> <span class="text-success font-weight-bold">₱<span id="summary-store-original_amount"></span></span></div>
+                            <div class="col-md-6"><strong>Unit Assignment:</strong> <span id="summary-store-original_unit_assignment"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Serial Type:</strong> <span id="summary-store-serial_type"></span></div>
+                            <div class="col-md-6"><strong>Bracket Number:</strong> <span id="summary-store-bracket_number"></span></div>
+                            <div class="col-md-6"><strong>Property Number:</strong> <span id="summary-store-property_number"></span></div>
+                            <div class="col-md-6"><strong>Serial Number:</strong> <span id="summary-store-serial_number"></span></div>
+                            <div class="col-md-12" style="margin-top: 20px;"><strong>Memo:</strong> <div id="summary-store-original_memo" class="memo-paragraph"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Original RIS Details -->
+                <div class="card mb-4" id="ris-summary-section">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">Original RIS Details</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Class:</strong> <span id="summary-ris-risclass"></span></div>
+                            <div class="col-md-6"><strong>Subclass:</strong> <span id="summary-ris-rissubclass"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>ID Number:</strong> <span id="summary-ris-number"></span></div>
+                            <div class="col-md-6"><strong>Repository:</strong> <span id="summary-ris-repo"></span></div>
+                        </div>
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-md-6"><strong>Date Received:</strong> <span id="summary-ris-original_date_received"></span></div>
+                            <div class="col-md-6"><strong>Date Acquired:</strong> <span id="summary-ris-original_date_acquired"></span></div>
+                            <div class="col-md-6"><strong>End User:</strong> <span id="summary-ris-original_end_user"></span></div>
+                            <div class="col-md-6"><strong>Unit Quantity:</strong> <span id="summary-ris-original_unit_quantity"></span></div>
+                            <div class="col-md-6"><strong>Amount:</strong> <span class="text-success font-weight-bold">₱<span id="summary-ris-original_amount"></span></span></div>
+                            <div class="col-md-12" style="margin-top: 20px;"><strong>Memo:</strong> <div id="summary-ris-original_memo" class="memo-paragraph"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<table id="distribution-table" class="table table-bordered table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>ID</th>
+            <th>Repository</th>
+            <th>End User</th>
+            <th>Unit Qunatity</th>
+            <th>Amount</th>
+            <th>Date Received</th>
+            <th>Date Acquired</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for distribution in distributions %}
+        <tr class="distribution-row" 
+            data-id="{{ distribution.distribute_id }}"
+            data-repository="{{ distribution.repo_name }}"
+            data-end-user="{{ distribution.end_user }}"
+            data-unit="{{ distribution.unit_quantity }}"
+            data-amount="{{ distribution.formatted_amount }}"
+            data-date-received="{{ distribution.date_received }}"
+            data-date-acquired="{{ distribution.date_acquired }}"
+            data-summary="{{ distribution.distribution_memo|default:"-" }}"
+
+            data-store-number="{{ distribution.store.store_id }}"
+            data-store-repository="{{ distribution.store.repository_id }}"
+            data-store-original_memo="{{ distribution.store.store_memo}}"
+            data-store-class="{{ distribution.store.class_id }}"
+            data-store-subclass="{{ distribution.store.subclass_id }}"
+            data-store-subset="{{ distribution.store.subset_id }}"
+            data-store-original_date_received="{{ distribution.store.date_received }}"
+            data-store-original_date_acquired="{{ distribution.store.date_acquired }}"
+            data-store-original_end_user="{{ distribution.store.end_user }}"
+            data-store-original_unit_quantity="{{ distribution.store.unit_quantity }}"
+            data-store-original_amount="{{ distribution.store.amount }}"
+            data-store-original_unit_assignment="{{ distribution.store.unit_assignment }}"
+            data-store-serial_type="{{ distribution.store.serial_type }}"
+            data-store-bracket_number="{{ distribution.store.bracket_number }}"
+            data-store-property_number="{{ distribution.store.property_number }}"
+            data-store-serial_number="{{ distribution.store.serial_number }}"
+
+            data-ris-number="{{ distribution.ris.ris_id }}"
+            data-ris-repository="{{ distribution.ris.repository_id }}"
+            data-ris-original_memo="{{ distribution.ris.ris_memo}}"
+            data-ris-risclass="{{ distribution.ris.risclass_id }}"
+            data-ris-rissubclass="{{ distribution.ris.rissubclass_id }}"
+            data-ris-original_date_received="{{ distribution.ris.date_received }}"
+            data-ris-original_date_acquired="{{ distribution.ris.date_acquired }}"
+            data-ris-original_end_user="{{ distribution.ris.end_user }}"
+            data-ris-original_unit_quantity="{{ distribution.ris.unit_quantity }}"
+            data-ris-original_amount="{{ distribution.ris.amount }}"
+        >
+
+            <td>{{ distribution.distribute_id }}</td>
+            <td>{{ distribution.repo_name }}</td>
+            <td>{{ distribution.end_user }}</td>
+            <td>{{ distribution.unit_quantity }}</td>
+            <td>{{ distribution.formatted_amount }}</td>
+            <td>{{ distribution.date_received }}</td>
+            <td>{{ distribution.date_acquired }}</td>
+            <td>
+                <a href="?delete={{ distribution.distribute_id }}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        const storeWrapper = $('#store-field-wrapper');
+        const risWrapper = $('#ris-field-wrapper');
+        const radioStore = $('#radio-store');
+        const radioRIS = $('#radio-ris');
+        const showModal = $('[data-show-modal]').data('show-modal');
+
+        function updateVisibility() {
+            if (radioStore.is(':checked')) {
+                storeWrapper.show();
+                risWrapper.hide();
+            } else if (radioRIS.is(':checked')) {
+                risWrapper.show();
+                storeWrapper.hide();
+            } else {
+                storeWrapper.hide();
+                risWrapper.hide();
+            }
+        }
+
+        radioStore.on('change', updateVisibility);
+        radioRIS.on('change', updateVisibility);
+        updateVisibility();
+
+        if (showModal === true) {
+            $('#distributionModal').modal('show');
+        }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        $('.distribution-row').css('cursor', 'pointer');
+
+        $('.distribution-row').on('click', function () {
+            const distributionId = $(this).data('id');
+            const repository = $(this).data('repository');
+            const endUser = $(this).data('end-user');
+            const unit = $(this).data('unit');
+            const amount = $(this).data('amount');
+            const dateReceived = $(this).data('date-received');
+            const dateAcquired = $(this).data('date-acquired');
+            const summary = $(this).data('summary');
+
+            $('#summary-id').text(distributionId);
+            $('#summary-repository').text(repository);
+            $('#summary-end-user').text(endUser);
+            $('#summary-unit').text(unit);
+            $('#summary-amount').text(amount);
+            $('#summary-date-received').text(dateReceived);
+            $('#summary-date-acquired').text(dateAcquired);
+            $('#summary-memo').text(summary);
+
+            $('#summary-store-number').text($(this).data('store-number') || 'N/A');
+            $('#summary-store-repo').text($(this).data('store-repository') || 'N/A');
+            $('#summary-store-original_memo').text($(this).data('store-original_memo') || 'N/A');
+            $('#summary-store-original_date_received').text($(this).data('store-original_date_received') || 'N/A');
+            $('#summary-store-original_date_acquired').text($(this).data('store-original_date_acquired') || 'N/A');
+            $('#summary-store-original_end_user').text($(this).data('store-original_end_user') || 'N/A');
+            $('#summary-store-original_unit_quantity').text($(this).data('store-original_unit_quantity') || 'N/A');
+            $('#summary-store-original_amount').text($(this).data('store-original_amount') || 'N/A');
+            $('#summary-store-original_unit_assignment').text($(this).data('store-original_unit_assignment') || 'N/A');
+            $('#summary-store-serial_type').text($(this).data('store-serial_type') || 'N/A');
+            $('#summary-store-bracket_number').text($(this).data('store-bracket_number') || 'N/A');
+            $('#summary-store-property_number').text($(this).data('store-property_number') || 'N/A');
+            $('#summary-store-serial_number').text($(this).data('store-serial_number') || 'N/A');
+
+            $('#summary-store-class').text($(this).data('store-class') || 'N/A');
+            $('#summary-store-subclass').text($(this).data('store-subclass') || 'N/A');
+            $('#summary-store-subset').text($(this).data('store-subset') || 'N/A');
+            $('#summary-store-item').text($(this).data('store-item') || 'N/A');
+
+            $('#summary-ris-number').text($(this).data('ris-number') || 'N/A');
+            $('#summary-ris-repo').text($(this).data('ris-repository') || 'N/A');
+            $('#summary-ris-original_memo').text($(this).data('ris-original_memo') || 'N/A');
+            $('#summary-ris-original_date_received').text($(this).data('ris-original_date_received') || 'N/A');
+            $('#summary-ris-original_date_acquired').text($(this).data('ris-original_date_acquired') || 'N/A');
+            $('#summary-ris-original_end_user').text($(this).data('ris-original_end_user') || 'N/A');
+            $('#summary-ris-original_unit_quantity').text($(this).data('ris-original_unit_quantity') || 'N/A');
+            $('#summary-ris-original_amount').text($(this).data('ris-original_amount') || 'N/A');
+
+            $('#summary-ris-risclass').text($(this).data('ris-risclass') || 'N/A');
+            $('#summary-ris-rissubclass').text($(this).data('ris-rissubclass') || 'N/A');
+            $('#summary-ris-item').text($(this).data('ris-item') || 'N/A');
+
+
+            $('#edit-distribution').attr('href', '?edit=' + distributionId);
+
+            $('#summaryModal').modal('show');
+        });
+
+        if (window.location.search.indexOf('edit') > -1) {
+            $('#distributionModal').modal('show');
+        }
+
+        $('#distributionModal').on('hidden.bs.modal', function () {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('edit');
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        });
+    });
+</script>
+<script>
+$(document).ready(function () {
+    $('.distribution-row').click(function () {
+        const storeRepo = $(this).data('store-repository');
+        const risNumber = $(this).data('ris-number');
+
+        $('#summary-store-repo').text(storeRepo || '-');
+        $('#summary-ris-number').text(risNumber || '-');
+
+        if (!storeRepo) {
+            $('#store-summary-section').hide();
+        } else {
+            $('#store-summary-section').show();
+        }
+
+        if (!risNumber) {
+            $('#ris-summary-section').hide();
+        } else {
+            $('#ris-summary-section').show();
+        }
+
+        $('#summaryModal').modal('show');
+    });
+});
+</script>
+<script>
+    $(document).ready(function () {
+        $('#distribution-table').DataTable();
+
+        if (window.location.search.indexOf('edit') > -1) {
+            $('#distributionModal').modal('show');
+        }
+
+        function removeQueryParam(param) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(param);
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        $('#distributionModal').on('hidden.bs.modal', function () {
+            removeQueryParam('edit');
+        });
+
+        $('.btn-secondary').on('click', function () {
+            $('#distributionModal').modal('hide');
+        });
+
+        $('.close').on('click', function () {
+            $('#distributionModal').modal('hide');
+        });
+    });
+</script>
+{% endblock %}

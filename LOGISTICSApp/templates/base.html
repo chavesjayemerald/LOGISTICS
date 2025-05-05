@@ -64,6 +64,11 @@
             width: calc(100% - 250px);
             overflow-y: auto;
         }
+        .memo-paragraph {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-align: justify;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -77,10 +82,10 @@
         <ul>
             <li><a href="{% url 'dashboard' %}">📊 Dashboard</a></li>
             <li><a href="{% url 'user_management' %}"> 👨‍🚒 Accounts</a></li>
-            <li><a> 📦 Distribution</a></li>
+            <li><a href="{% url 'distribution_management' %}"> 📦 Distribution</a></li>
             <li><a href="{% url 'storage_management' %}"> 🗄️ Storage Management</a></li>
             <li><a href="{% url 'ris_management' %}"> 📚 RIS Management</a></li>
-            <li><a href="{% url 'lot_management' %}"> 🌄 LOT Management</a></li>
+            <li><a href="{% url 'lot_management' %}"> 🌄 Lot Management</a></li>
             <li><a href="{% url 'building_management' %}"> 🏢 Building Management</a></li>
             <li><a href="{% url 'parking_management' %}"> 🚒 Parking Management</a></li>
             <li class="logout"><a href="{% url 'logout' %}" style="color: red;">🚪Logout</a></li>
